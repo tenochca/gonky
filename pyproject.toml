@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gonky"
+version = "0.1.0"
+description = "A GUI application for generating custom Conky config files"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = [
+    "PyGObject>=3.42.0",
+]
+
+[project.scripts]
+gonky = "gonky.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+
+[tool.coverage.run]
+source = ["src/gonky"]
+omit = ["tests/*"]
