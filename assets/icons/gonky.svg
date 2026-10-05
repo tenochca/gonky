@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Gonky application icon (placeholder) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <rect width="48" height="48" rx="8" fill="#3b82d4"/>
+  <text x="24" y="32" font-size="24" text-anchor="middle" fill="white" font-family="sans-serif">G</text>
+</svg>
