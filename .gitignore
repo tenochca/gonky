@@ -1,72 +1,66 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.so
-*.dylib
-*.dll
-*.so.*
 
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Build directories
+# ── Build / packaging ─────────────────────────────────────────────────────────
+dist/
 build/
-Build/
-build-*/
+*.egg-info/
+*.egg
+MANIFEST
 
-# CMake generated files
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-install_manifest.txt
-compile_commands.json
+# ── Installer caches ──────────────────────────────────────────────────────────
+pip-log.txt
+pip-delete-this-directory.txt
+.pip/
+wheels/
 
-# Temporary files
+# ── pytest / coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+
+# ── mypy / type-checkers ──────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ── Editors / IDEs ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Gonky project files (user data — not tracked in source) ───────────────────
+# .gonky save files created during development/testing
+*.gonky
+
+# ── Gonky preview cache ───────────────────────────────────────────────────────
+# Written by PreviewManager to ~/.cache/gonky/; listed here for local dev safety
+.cache/
+
+# ── Conky config exports produced during testing ──────────────────────────────
+# Keep the real conky.conf in place — only ignore transient test exports
+*.conf.test
+
+# ── OS cruft ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Temporary / log files ─────────────────────────────────────────────────────
 *.tmp
 *.log
 *.bak
-*.swp
-
-# vcpkg
-vcpkg_installed/
-
-# debug information files
-*.dwo
-
-# test output & cache
-Testing/
-.cache/
-
-.venv/
-.vscode/
