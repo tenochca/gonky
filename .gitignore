@@ -1,123 +1,66 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.so
-*.dylib
-*.dll
-*.so.*
 
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Build directories
-build/
-Build/
-build-*/
-
-# CMake generated files
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-install_manifest.txt
-compile_commands.json
-
-# Temporary files
-*.tmp
-*.log
-*.bak
-*.swp
-
-# vcpkg
-vcpkg_installed/
-
-# debug information files
-*.dwo
-
-# test output & cache
-Testing/
-.cache/
-
-.vscode/
-__pycache__
-
-# Virtual Environments
+# ── Virtual environments ───────────────────────────────────────────────────────
 .venv/
 venv/
 env/
+ENV/
 
-# Environments & Secrets
-.env
-.env.local
-secrets.json
-
-# Distribution / Packaging
-build/
-develop-eggs/
+# ── Build / packaging ─────────────────────────────────────────────────────────
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
+build/
 *.egg-info/
-.installed.cfg
 *.egg
 MANIFEST
 
-# Testing / Coverage
-htmlcov/
-.tox/
-.nosenv/
+# ── Installer caches ──────────────────────────────────────────────────────────
+pip-log.txt
+pip-delete-this-directory.txt
+.pip/
+wheels/
+
+# ── pytest / coverage ─────────────────────────────────────────────────────────
 .pytest_cache/
-.cache/
 .coverage
 .coverage.*
-nosetests.xml
 coverage.xml
+htmlcov/
 *.cover
-*.py,cover
 
-# Tooling Caches
+# ── mypy / type-checkers ──────────────────────────────────────────────────────
 .mypy_cache/
-.ruff_cache/
 .dmypy.json
 dmypy.json
 
-# Jupyter Notebooks
-.ipynb_checkpoints
+# ── Editors / IDEs ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Gonky project files (user data — not tracked in source) ───────────────────
+# .gonky save files created during development/testing
+*.gonky
+
+# ── Gonky preview cache ───────────────────────────────────────────────────────
+# Written by PreviewManager to ~/.cache/gonky/; listed here for local dev safety
+.cache/
+
+# ── Conky config exports produced during testing ──────────────────────────────
+# Keep the real conky.conf in place — only ignore transient test exports
+*.conf.test
+
+# ── OS cruft ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Temporary / log files ─────────────────────────────────────────────────────
+*.tmp
+*.log
+*.bak
