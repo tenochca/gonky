@@ -1,5 +1,9 @@
-"""Components package — imports all component types and builds the registry.
+"""Components package — imports all component types and builds the registry."""
 
-Stub for Sub-Task 3 (Component System).
-"""
-# Implemented in Sub-Task 3.
+from gonky.components.system.cpu import CpuBar, CpuFrequency, CpuGraph, CpuUsage
+from gonky.models.component import COMPONENT_REGISTRY
+
+COMPONENT_REGISTRY[CpuUsage.TYPE_KEY] = CpuUsage
+COMPONENT_REGISTRY[CpuBar.TYPE_KEY] = CpuBar
+COMPONENT_REGISTRY[CpuGraph.TYPE_KEY] = CpuGraph
+COMPONENT_REGISTRY[CpuFrequency.TYPE_KEY] = CpuFrequency
