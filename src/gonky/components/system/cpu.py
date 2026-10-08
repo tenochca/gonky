@@ -194,7 +194,7 @@ class CpuGraph(AbstractComponent):
         ]
 
 
-class CpuFrequency(AbstractComponent):
+class CpuFreq(AbstractComponent):
     TYPE_KEY = "cpu_freq"
     DISPLAY_NAME = "CPU Frequency"
     ICON_NAME = "cpu_freq"
@@ -218,5 +218,36 @@ class CpuFrequency(AbstractComponent):
                 min_val=0,
                 max_val=32,
                 tooltip="0 = overall average; 1–N = individual core",
+            ),
+        ]
+
+
+class LoadAvg(AbstractComponent):
+    TYPE_KEY = "load_avg"
+    DISPLAY_NAME = "Load Average"
+    ICON_NAME = "load_avg"
+    DEFAULT_PROPERTIES = {"period": 0}
+
+    # reference format (period optional, prints all 3):
+    # ${loadavg period}
+    def render_conky_text(self, props: dict) -> str:
+        period: int = props.get("period", 0)
+
+        # period ranges 0-3, 0 being default
+        if period == 0:
+            return "${{loadavg}}"
+        return f"${{loadavg {period}}}"
+
+    @classmethod
+    def property_schema(cls) -> list[PropertyField]:
+        return [
+            PropertyField(
+                key="period",
+                label="Period (1, 5, 15)",
+                field_type="int",
+                default=0,
+                min_val=0,
+                max_val=3,
+                tooltip="0 = all three intervals; 1–3 = respective interval in minutes",
             ),
         ]
