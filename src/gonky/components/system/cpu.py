@@ -166,7 +166,7 @@ class CpuGraph(AbstractComponent):
                 default=0,
                 min_val=0,
                 max_val=None,
-                tooltip="Bar width in pixels; 0 = use Conky's default bar width",
+                tooltip="Graph width in pixels; 0 = use Conky's default graph width",
             ),
             PropertyField(
                 key="height",
@@ -175,7 +175,7 @@ class CpuGraph(AbstractComponent):
                 default=0,
                 min_val=0,
                 max_val=None,
-                tooltip="Bar height in pixels; 0 = use Conky's default bar height",
+                tooltip="Graph height in pixels; 0 = use Conky's default graph height",
             ),
             PropertyField(
                 key="color_lo",
