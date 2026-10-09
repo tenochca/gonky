@@ -134,3 +134,79 @@ class DiskIO(AbstractComponent):
                 tooltip="read = read throughput; write = write throughput; total = combined read+write",
             ),
         ]
+
+
+class DiskIOGraph(AbstractComponent):
+    TYPE_KEY = "disk_io_graph"
+    DISPLAY_NAME = "Disk I/O Graph"
+    ICON_NAME = "disk_io_graph"
+    DEFAULT_PROPERTIES = {
+        "device": "",
+        "direction": "read",
+        "width": 0,
+        "height": 0,
+    }
+
+    # reference format (all args optional):
+    # ${diskiograph_read device h,w}
+    # ${diskiograph_write device h,w}
+    # ${diskiograph device h,w}
+    def render_conky_text(self, props: dict) -> str:
+        device: str = props.get("device", "")
+        direction: str = props.get("direction", "read")
+        width: int = props.get("width", 0)
+        height: int = props.get("height", 0)
+
+        if direction == "write":
+            base = "diskiograph_write"
+        elif direction == "read":
+            base = "diskiograph_read"
+        else:
+            base = "diskiograph"
+
+        var = base
+        if device:
+            var += f" {device}"
+        if height != 0:
+            var += f" {height}"
+            if width != 0:
+                var += f",{width}"
+        return f"${{{var}}}"
+
+    @classmethod
+    def property_schema(cls) -> list[PropertyField]:
+        return [
+            PropertyField(
+                key="device",
+                label="Device",
+                field_type="text",
+                default="",
+                tooltip="Block device name without /dev/, e.g. sda or nvme0n1; leave empty for all devices",
+            ),
+            PropertyField(
+                key="direction",
+                label="Direction",
+                field_type="choice",
+                default="read",
+                choices=["read", "write", "total"],
+                tooltip="read = read throughput; write = write throughput; total = combined read+write",
+            ),
+            PropertyField(
+                key="width",
+                label="Width",
+                field_type="int",
+                default=0,
+                min_val=0,
+                max_val=None,
+                tooltip="Graph width in pixels; 0 = use Conky's default graph width",
+            ),
+            PropertyField(
+                key="height",
+                label="Height",
+                field_type="int",
+                default=0,
+                min_val=0,
+                max_val=None,
+                tooltip="Graph height in pixels; 0 = use Conky's default graph height",
+            ),
+        ]
