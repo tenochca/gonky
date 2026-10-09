@@ -96,7 +96,7 @@ class CpuBar(AbstractComponent):
             ),
             PropertyField(
                 key="height",
-                label="height",
+                label="Height",
                 field_type="int",
                 default=0,
                 min_val=0,
@@ -141,10 +141,9 @@ class CpuGraph(AbstractComponent):
             var += f" {height}"
             if width != 0:
                 var += f",{width}"
-        if color_lo != "":
-            var += f" {color_lo}"
-        if color_hi != "":
-            var += f" {color_hi}"
+        # Conky requires both colors together or neither
+        if color_lo != "" and color_hi != "":
+            var += f" {color_lo} {color_hi}"
         return f"${{{var}}}"
 
     @classmethod
@@ -170,7 +169,7 @@ class CpuGraph(AbstractComponent):
             ),
             PropertyField(
                 key="height",
-                label="height",
+                label="Height",
                 field_type="int",
                 default=0,
                 min_val=0,
@@ -179,17 +178,17 @@ class CpuGraph(AbstractComponent):
             ),
             PropertyField(
                 key="color_lo",
-                label="Color 1",
+                label="Color Low",
                 field_type="color",
                 default="",
-                tooltip="Leave empty to inherit the current Conky color",
+                tooltip="Graph color at low CPU usage; both colors must be set together",
             ),
             PropertyField(
                 key="color_hi",
-                label="Color 2",
+                label="Color High",
                 field_type="color",
                 default="",
-                tooltip="Leave empty to inherit the current Conky color",
+                tooltip="Graph color at high CPU usage; both colors must be set together",
             ),
         ]
 
@@ -201,11 +200,14 @@ class CpuFreq(AbstractComponent):
     DEFAULT_PROPERTIES = {"core": 0}
 
     # reference format (core num is optional):
-    # ${freq_g cpu#}
+    # ${freq_g}      -- overall average
+    # ${freq_g cpu#} -- specific core (1-N)
     def render_conky_text(self, props: dict) -> str:
         core: int = props.get("core", 0)
 
-        return f"${{freq_g {core}}}"  # component only takes num, 0 is still average
+        if core == 0:
+            return "${freq_g}"
+        return f"${{freq_g {core}}}"
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -235,7 +237,7 @@ class LoadAvg(AbstractComponent):
 
         # period ranges 0-3, 0 being default
         if period == 0:
-            return "${{loadavg}}"
+            return "${loadavg}"
         return f"${{loadavg {period}}}"
 
     @classmethod
@@ -243,11 +245,11 @@ class LoadAvg(AbstractComponent):
         return [
             PropertyField(
                 key="period",
-                label="Period (1, 5, 15)",
+                label="Period",
                 field_type="int",
                 default=0,
                 min_val=0,
                 max_val=3,
-                tooltip="0 = all three intervals; 1–3 = respective interval in minutes",
+                tooltip="Which average to show: 0 = all three (1 min, 5 min, 15 min); 1 = 1-min; 2 = 5-min; 3 = 15-min",
             ),
         ]

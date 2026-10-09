@@ -20,10 +20,12 @@ class ExecCommand(AbstractComponent):
         command: str = props.get("command", "")
         exec_type: str = props.get("exec_type", "exec")
 
-        if exec_type != "exec" and exec_type != "execbar" and exec_type != "execgraph":
+        if exec_type not in ("exec", "execbar", "execgraph"):
             exec_type = "exec"
 
-        return f"${{{exec_type} {command}}}"
+        # command is required; emit bare variable if empty so output is at least valid syntax
+        cmd = f" {command}" if command else ""
+        return f"${{{exec_type}{cmd}}}"
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -33,7 +35,7 @@ class ExecCommand(AbstractComponent):
                 label="Command",
                 field_type="text",
                 default="",
-                tooltip="command to be ran",
+                tooltip="Command to run",
             ),
             PropertyField(
                 key="exec_type",
@@ -41,6 +43,6 @@ class ExecCommand(AbstractComponent):
                 field_type="choice",
                 default="exec",
                 choices=["exec", "execbar", "execgraph"],
-                tooltip="Select output format for command",
+                tooltip="exec = text output; execbar = numeric 0-100 rendered as a bar; execgraph = scrolling graph",
             ),
         ]

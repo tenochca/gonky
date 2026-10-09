@@ -15,7 +15,8 @@ class CustomText(AbstractComponent):
     }
 
     # reference format:
-    # ${time format}
+    # ${font Name:size=N}text${font}
+    # ${color #rrggbb}${font Name:size=N}text${font}${color}
     def render_conky_text(self, props: dict) -> str:
         content: str = props.get("content", "")
         color: str = props.get("color", "")
@@ -24,8 +25,8 @@ class CustomText(AbstractComponent):
 
         var = f"${{font {font}:size={size}}}{content}${{font}}"
         if color != "":
-            return f"[[${{color {color}}}{var}${{color}}]]"
-        return f"[[{var}]]"
+            return f"${{color {color}}}{var}${{color}}"
+        return var
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -35,7 +36,7 @@ class CustomText(AbstractComponent):
                 label="Text Content",
                 field_type="text",
                 default="",
-                tooltip="Text to be displayed",
+                tooltip="Literal text to display; use \\$ to show a dollar sign",
             ),
             PropertyField(
                 key="color",
@@ -49,15 +50,15 @@ class CustomText(AbstractComponent):
                 label="Font",
                 field_type="font",
                 default="DejaVu Sans Mono",
-                tooltip="Enter font name",
+                tooltip="Font used for this text block; overrides the global Conky font",
             ),
             PropertyField(
                 key="size",
-                label="Font size",
+                label="Font Size",
                 field_type="int",
                 default=10,
-                min_val=0,
+                min_val=1,
                 max_val=None,
-                tooltip="Enter font size",
+                tooltip="Font size in points",
             ),
         ]

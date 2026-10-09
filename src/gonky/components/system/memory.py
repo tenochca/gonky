@@ -17,11 +17,11 @@ class RamUsage(AbstractComponent):
         format: str = props.get("format", "%")
 
         if format == "human":
-            return f"${{mem}}"
+            return "${mem}"
         elif format == "bytes":
-            return f"${{memraw}}"
+            return "${memraw}"
         else:
-            return f"${{memperc}}"
+            return "${memperc}"
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -32,7 +32,7 @@ class RamUsage(AbstractComponent):
                 field_type="choice",
                 default="%",
                 choices=["%", "bytes", "human"],
-                tooltip="Display current RAM usage as %, bytes, or gigabytes",
+                tooltip="% = percentage used; human = human-readable size (e.g. 3.2 GiB); bytes = raw bytes",
             ),
         ]
 
@@ -75,7 +75,7 @@ class RamBar(AbstractComponent):
             ),
             PropertyField(
                 key="height",
-                label="height",
+                label="Height",
                 field_type="int",
                 default=0,
                 min_val=0,
@@ -116,10 +116,9 @@ class RamGraph(AbstractComponent):
             var += f" {height}"
             if width != 0:
                 var += f",{width}"
-        if color_lo != "":
-            var += f" {color_lo}"
-        if color_hi != "":
-            var += f" {color_hi}"
+        # Conky requires both colors together or neither
+        if color_lo != "" and color_hi != "":
+            var += f" {color_lo} {color_hi}"
         return f"${{{var}}}"
 
     @classmethod
@@ -136,7 +135,7 @@ class RamGraph(AbstractComponent):
             ),
             PropertyField(
                 key="height",
-                label="height",
+                label="Height",
                 field_type="int",
                 default=0,
                 min_val=0,
@@ -145,17 +144,17 @@ class RamGraph(AbstractComponent):
             ),
             PropertyField(
                 key="color_lo",
-                label="Color 1",
+                label="Color Low",
                 field_type="color",
                 default="",
-                tooltip="Leave empty to inherit the current Conky color",
+                tooltip="Graph color at low memory usage; both colors must be set together",
             ),
             PropertyField(
                 key="color_hi",
-                label="Color 2",
+                label="Color High",
                 field_type="color",
                 default="",
-                tooltip="Leave empty to inherit the current Conky color",
+                tooltip="Graph color at high memory usage; both colors must be set together",
             ),
         ]
 
@@ -174,11 +173,11 @@ class SwapUsage(AbstractComponent):
         format: str = props.get("format", "%")
 
         if format == "human":
-            return f"${{swap}}"
+            return "${swap}"
         elif format == "bytes":
-            return f"${{swapraw}}"
+            return "${swapraw}"
         else:
-            return f"${{swapperc}}"
+            return "${swapperc}"
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -189,6 +188,6 @@ class SwapUsage(AbstractComponent):
                 field_type="choice",
                 default="%",
                 choices=["%", "bytes", "human"],
-                tooltip="Display current Swap usage as %, bytes, or gigabytes",
+                tooltip="% = percentage used; human = human-readable size (e.g. 1.1 GiB); bytes = raw bytes",
             ),
         ]

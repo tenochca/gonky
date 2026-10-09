@@ -29,7 +29,7 @@ class DiskUsage(AbstractComponent):
                 label="Mount Point",
                 field_type="text",
                 default="/",
-                tooltip="Point of origin for calculating usage",
+                tooltip="Filesystem mount point to measure, e.g. / or /home",
             ),
             PropertyField(
                 key="format",
@@ -37,7 +37,7 @@ class DiskUsage(AbstractComponent):
                 field_type="choice",
                 default="%",
                 choices=["%", "human"],
-                tooltip="Display current Disk usage as % or gigabytes",
+                tooltip="% = percentage used; human = human-readable size (e.g. 48.3 GiB)",
             ),
         ]
 
@@ -51,7 +51,7 @@ class DiskBar(AbstractComponent):
     # reference format (width and height are optional):
     # ${diskbar h,w mount_point}
     def render_conky_text(self, props: dict) -> str:
-        mount_point: int = props.get("mount_point", 0)
+        mount_point: str = props.get("mount_point", "/")
         width: int = props.get("width", 0)
         height: int = props.get("height", 0)
 
@@ -70,7 +70,7 @@ class DiskBar(AbstractComponent):
                 label="Mount Point",
                 field_type="text",
                 default="/",
-                tooltip="Point of origin for calculating usage",
+                tooltip="Filesystem mount point to measure, e.g. / or /home",
             ),
             PropertyField(
                 key="width",
@@ -83,7 +83,7 @@ class DiskBar(AbstractComponent):
             ),
             PropertyField(
                 key="height",
-                label="height",
+                label="Height",
                 field_type="int",
                 default=0,
                 min_val=0,
@@ -97,7 +97,7 @@ class DiskIO(AbstractComponent):
     TYPE_KEY = "disk_io"
     DISPLAY_NAME = "Disk I/O"
     ICON_NAME = "disk_io"
-    DEFAULT_PROPERTIES = {"device": "", "direction": "total"}
+    DEFAULT_PROPERTIES = {"device": "", "direction": "read"}
 
     # reference format:
     # ${diskio device}
@@ -105,14 +105,15 @@ class DiskIO(AbstractComponent):
     # ${diskio_write device}
     def render_conky_text(self, props: dict) -> str:
         device: str = props.get("device", "")
-        direction: str = props.get("direction", "total")
+        direction: str = props.get("direction", "read")
 
-        if direction == "read":
-            return f"${{diskio_read {device}}}"
+        # device is optional in Conky; omit rather than emit a trailing space
+        dev = f" {device}" if device else ""
         if direction == "write":
-            return f"${{diskio_write {device}}}"
-        else:
-            return f"${{diskio {device}}}"
+            return f"${{diskio_write{dev}}}"
+        if direction == "read":
+            return f"${{diskio_read{dev}}}"
+        return f"${{diskio{dev}}}"
 
     @classmethod
     def property_schema(cls) -> list[PropertyField]:
@@ -122,7 +123,7 @@ class DiskIO(AbstractComponent):
                 label="Device",
                 field_type="text",
                 default="",
-                tooltip="Enter device name to capture it's speed",
+                tooltip="Block device name without /dev/, e.g. sda or nvme0n1; leave empty for all devices",
             ),
             PropertyField(
                 key="direction",
@@ -130,6 +131,6 @@ class DiskIO(AbstractComponent):
                 field_type="choice",
                 default="read",
                 choices=["read", "write", "total"],
-                tooltip="Display read or write speed",
+                tooltip="read = read throughput; write = write throughput; total = combined read+write",
             ),
         ]

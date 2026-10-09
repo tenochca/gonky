@@ -24,7 +24,7 @@ class Clock(AbstractComponent):
                 label="Clock format",
                 field_type="text",
                 default="%H:%M:%S",
-                tooltip="Enter alternative time format",
+                tooltip="strftime format string, e.g. %H:%M:%S for 14:05:30",
             ),
         ]
 
@@ -50,7 +50,7 @@ class Date(AbstractComponent):
                 label="Date format",
                 field_type="text",
                 default="%Y-%m-%d",
-                tooltip="Enter alternative date format",
+                tooltip="strftime format string, e.g. %Y-%m-%d for 2025-07-04",
             ),
         ]
 
