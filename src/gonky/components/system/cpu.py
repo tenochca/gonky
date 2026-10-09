@@ -9,7 +9,7 @@ class CpuUsage(AbstractComponent):
     ICON_NAME = "cpu_usage"
     DEFAULT_PROPERTIES = {"core": 0, "color": ""}
 
-    # reference format (core num and color are both optional)
+    # reference format (core num and color are both optional):
     # ${cpu cpu#}
     # ${color red}${cpubar cpu#}${color}
     def render_conky_text(self, props: dict) -> str:
