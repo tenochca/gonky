@@ -1,5 +1,6 @@
 """Components package — imports all component types and builds the registry."""
 
+from gonky.components.display.clock import Clock, Date, Uptime
 from gonky.components.system.cpu import CpuBar, CpuFreq, CpuGraph, CpuUsage, LoadAvg
 from gonky.components.system.disk import DiskBar, DiskIO, DiskUsage
 from gonky.components.system.memory import RamBar, RamGraph, RamUsage, SwapUsage
@@ -20,3 +21,7 @@ COMPONENT_REGISTRY[SwapUsage.TYPE_KEY] = SwapUsage
 COMPONENT_REGISTRY[DiskUsage.TYPE_KEY] = DiskUsage
 COMPONENT_REGISTRY[DiskBar.TYPE_KEY] = DiskBar
 COMPONENT_REGISTRY[DiskIO.TYPE_KEY] = DiskIO
+
+COMPONENT_REGISTRY[Clock.TYPE_KEY] = Clock
+COMPONENT_REGISTRY[Date.TYPE_KEY] = Date
+COMPONENT_REGISTRY[Uptime.TYPE_KEY] = Uptime
