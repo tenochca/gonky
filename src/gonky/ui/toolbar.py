@@ -17,7 +17,7 @@ class ToolBar(Gtk.HeaderBar):
     def __init__(self) -> None:
         super().__init__()
 
-    # Left Side: File actions
+        # Left Side: File actions
 
         self.btn_new = self._make_button("document-new-symbolic", "New project")
         self.btn_open = self._make_button("document-open-symbolic", "Open project")
@@ -26,7 +26,7 @@ class ToolBar(Gtk.HeaderBar):
         for btn in (self.btn_new, self.btn_open, self.btn_save):
             self.pack_start(btn)
     
-    # Right Side: Workflow actions
+        # Right Side: Workflow actions
 
         self.btn_settings = self._make_button("emblem-system-symbolic", "Settings")
         self.btn_apply = self._make_button("media-playback-start-symbolic", "Apply to Conky")
