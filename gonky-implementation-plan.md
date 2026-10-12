@@ -503,18 +503,86 @@ Implement the pure-logic module that translates a `GonkyDocument` into a valid C
 - Output always contains `conky.config = {` and `conky.text = [[`
 - All `GlobalConkySettings` fields render correctly in the config block
 - Components render in Y-sort order (ascending Y, X as tiebreaker)
-- All 30+ component types produce correct Conky variable syntax
-- Escaping edge cases handled: literal `$` and `${` in custom text, empty component list
+- All 36 registered component types produce correct Conky variable syntax via delegation to `render_conky_text()`
+- Escaping edge cases handled: literal `$` and `${` in custom text components, empty component list
+- `extra_lua` field emitted verbatim after the closing `}` of `conky.config` when non-empty
 - Unit tests cover every component type and multiple global setting combinations
 
 ### Todo List
-1. Implement `ConfigGenerator` class in `logic/config_generator.py` with static method `generate(doc: GonkyDocument) -> str`
-2. Implement `_render_config_block(settings: GlobalConkySettings) -> str` — builds the Lua table literal
-3. Implement `_sort_components(components: list[ConkyComponent]) -> list[ConkyComponent]` — sort by `canvas_y` then `canvas_x`
-4. Implement `_render_text_block(components: list[ConkyComponent]) -> str` — iterates sorted enabled components, calls `render_conky_text()`, joins with `\n`
-5. Implement `_escape_conky_text(text: str) -> str` — escapes `\$` for literal dollars in custom text components
-6. Implement `_validate_before_generate(doc: GonkyDocument) -> list[str]` — pre-flight check; raises `ConfigGenerationError` if errors found
-7. Write `tests/test_config_generator.py` — one test per component type, global settings rendering, Y-sort ordering, escaping edge cases, empty document
+
+#### 1. Implement `ConfigGenerator.generate(doc: GonkyDocument) -> str`
+- **What:** The single public entry point. Orchestrates the full pipeline: validate → render config block → render text block → assemble final string.
+- **Consider:**
+  - Call `_validate_before_generate(doc)` first; propagate any `ConfigGenerationError` to the caller.
+  - Assemble the output as: `conky.config = {\n{config_block}\n}\n\n{extra_lua}\nconky.text = [[\n{text_block}\n]]`.
+  - `extra_lua` block: if `doc.settings.extra_lua` is non-empty, append it between the config block and the `conky.text` assignment (with a blank line on each side). If empty, omit entirely — do not emit an empty line.
+  - Must `import gonky.components` (even as a `# noqa: F401`) at module level to ensure `COMPONENT_REGISTRY` is populated before any call to `generate()`.
+  - Return type is `str`; never write to disk — callers handle I/O.
+
+#### 2. Implement `_render_config_block(settings: GlobalConkySettings) -> str`
+- **What:** Converts a `GlobalConkySettings` dataclass into the body of the Lua `conky.config = { ... }` table (the lines between the braces, each indented four spaces).
+- **Consider:**
+  - Field-to-Lua-key mapping (Python field name → Conky config key):
+    - `settings.window_width` → `minimum_width`
+    - `settings.window_height` → `minimum_height`
+    - `settings.default_font` + `settings.default_font_size` → single `font = 'FontName:size=N'` entry
+    - `settings.default_color` → `default_color`
+    - All remaining fields map 1:1 (e.g. `alignment`, `gap_x`, `gap_y`, `own_window`, etc.)
+    - `extra_lua` is **not** emitted inside the config block — it is appended after the closing `}`.
+  - Lua type rules: `bool` → `true`/`false` (lowercase), `str` → single-quoted (`'value'`), `int`/`float` → unquoted numeric literal.
+  - Emit fields in a consistent, deterministic order (match the order shown in the Relevant Context example). Hard-code the field order rather than iterating `dataclasses.fields()` to avoid order surprises.
+  - Each line: `    key = value,` (4-space indent, trailing comma, no space before `=`).
+
+#### 3. Implement `_sort_components(components: list[ConkyComponent]) -> list[ConkyComponent]`
+- **What:** Returns a new list sorted ascending by `canvas_y`, with `canvas_x` as the tiebreaker.
+- **Consider:**
+  - Use `sorted()` with `key=lambda c: (c.canvas_y, c.canvas_x)` — do not mutate the input list.
+  - This sort is the canonical ordering that drives output order in `conky.text`. The canvas UI does not reorder; this function owns that responsibility.
+  - Disabled components (`enabled=False`) should be excluded here (or in the caller) so they are never passed to `render_conky_text()`.
+
+#### 4. Implement `_render_text_block(components: list[ConkyComponent]) -> str`
+- **What:** Iterates the sorted, enabled components; delegates rendering to each component class; joins results with `\n`.
+- **Consider:**
+  - For each component: look up its class via `COMPONENT_REGISTRY[component.component_type]`, instantiate it, call `instance.render_conky_text(component.properties)`.
+  - If `component.component_type` is not in `COMPONENT_REGISTRY`, raise `ConfigGenerationError` with a clear message naming the unknown type.
+  - Merge the component's `DEFAULT_PROPERTIES` with `component.properties` before calling `render_conky_text()`, so omitted props always fall back to their defaults: `{**ComponentClass.DEFAULT_PROPERTIES, **component.properties}`.
+  - `Spacer` components emit `\n` × `line_count` — since the joiner is already `\n`, a single-line spacer should emit one blank line (i.e., `\n`). Confirm the final output has the right number of newlines by writing tests.
+  - Only `CustomText` component values are passed through `_escape_conky_text()`. All other components emit raw Conky variable syntax — never escape their output.
+  - The returned string should not have a leading or trailing `\n`; the outer assembly adds those around the `[[ ... ]]` delimiters.
+
+#### 5. Implement `_escape_conky_text(text: str) -> str`
+- **What:** Escapes user-typed literal dollar signs in `CustomText` content so they are not interpreted as Conky variables.
+- **Consider:**
+  - `$` → `\$` (a backslash followed by `$`)
+  - This means `${foo}` typed by the user becomes `\${foo}` in the output — the brace is kept, only the `$` is escaped.
+  - Use a single `str.replace("$", "\\$")` pass — no regex needed.
+  - This function is called **only** on the `content` property of `CustomText` components, not on the full rendered fragment (which wraps it with `${font ...}` and `${color ...}` — those dollars must not be escaped).
+  - Write explicit unit tests: `"costs $5"` → `"costs \$5"`, `"${foo}"` → `"\${foo}"`, `"no dollars"` → `"no dollars"`, empty string → empty string.
+
+#### 6. Implement `_validate_before_generate(doc: GonkyDocument) -> None`
+- **What:** Pre-flight check that raises `ConfigGenerationError` with a descriptive message if the document is in an unrenderable state.
+- **Consider:**
+  - Define `ConfigGenerationError(Exception)` in the same file (or in `logic/errors.py` if one exists — check first).
+  - Checks to perform:
+    - `doc.settings` is not `None`.
+    - All `component.component_type` values in `doc.components` are keys in `COMPONENT_REGISTRY` (unknown types = hard error).
+    - `doc.settings.update_interval` > 0 (Conky crashes on 0 or negative interval).
+    - `doc.settings.default_font` is not an empty string.
+  - Do **not** validate things the data model already enforces (e.g., required fields with defaults). Only catch states that would produce a broken or unlaunchable Conky config.
+  - Return `None` on success; raise on failure. Do not return a list of strings — the plan's original wording was aspirational; a single raised exception is simpler and correct.
+
+#### 7. Write `tests/test_config_generator.py`
+- **What:** Comprehensive unit test suite for the config generator. The stub file already exists at `tests/test_config_generator.py`.
+- **Consider:**
+  - Must `import gonky.components  # noqa: F401` at the top of the test file to populate `COMPONENT_REGISTRY`.
+  - Test classes to write:
+    - `TestRenderConfigBlock` — default settings produce expected Lua key-value lines; non-default values (custom font, alignment, etc.); `extra_lua` is absent from the config block; `window_width`/`window_height` emit as `minimum_width`/`minimum_height`; booleans render as `true`/`false`.
+    - `TestSortComponents` — ascending Y order; X tiebreaker; disabled components are excluded; empty list returns empty list.
+    - `TestEscapeConkyText` — all four cases listed in todo item 5.
+    - `TestRenderTextBlock` — one sub-test per component family (at minimum one for each of: CPU, Memory, Disk, Network, Battery, Temperature, Processes, Clock, Date, Uptime, CustomText, Spacer, Separator, Bar, Graph, ExecCommand, LuaSnippet); unknown component type raises `ConfigGenerationError`; DEFAULT_PROPERTIES merge works correctly.
+    - `TestGenerate` (integration-level) — empty document produces valid skeleton; full document with mixed components produces expected full string; `extra_lua` appears between config block and `conky.text`; disabled components are absent from output; `ConfigGenerationError` raised on invalid `update_interval`.
+  - Follow the class-per-concern pattern used in `tests/test_components.py` (setup_method, direct assertion style).
+  - Do not mock `render_conky_text()` — call through to the real components to catch integration bugs.
 
 ### Relevant Context
 
@@ -553,14 +621,48 @@ ${membar 4,200}
 - Python `str` → single-quoted Lua string: `'value'`
 - Python `int` / `float` → unquoted numeric literal
 
-**Font string:** `conky.config.font` = `'FontName:size=N'`. The generator concatenates `settings.default_font + ":size=" + str(settings.default_font_size)`.
+**`GlobalConkySettings` field-to-Lua mapping (full):**
+- `alignment` → `alignment`
+- `gap_x` → `gap_x`
+- `gap_y` → `gap_y`
+- `window_width` → `minimum_width`
+- `window_height` → `minimum_height`
+- `own_window` → `own_window`
+- `own_window_type` → `own_window_type`
+- `own_window_transparent` → `own_window_transparent`
+- `own_window_argb_visual` → `own_window_argb_visual`
+- `double_buffer` → `double_buffer`
+- `update_interval` → `update_interval`
+- `default_font` + `default_font_size` → `font = 'FontName:size=N'`
+- `default_color` → `default_color`
+- `background` → `background`
+- `border_width` → `border_width`
+- `cpu_avg_samples` → `cpu_avg_samples`
+- `net_avg_samples` → `net_avg_samples`
+- `extra_lua` → appended verbatim after the closing `}` of `conky.config`, not inside it
 
-**⚠️ Escaping risk:** `$` inside `conky.text` introduces a Conky variable. Literal dollar signs in custom text must be written as `\$`. Custom text components that the user has typed `${` into must have the brace escaped to `\${`. Implement `_escape_conky_text()` with explicit unit tests for:
-- `"costs $5"` → `"costs \$5"`
-- `"value ${foo}"` → `"value \${foo}"`
-- `"${cpu}"` passed as a raw variable → must NOT be escaped (only `text` component values are escaped; raw variable strings from component definitions are never passed through `_escape_conky_text`)
+**Font string:** `conky.config.font` = `'FontName:size=N'`. Concatenate `settings.default_font + ":size=" + str(settings.default_font_size)`.
+
+**`ConkyComponent` fields used by the generator:**
+- `component_type: str` — key into `COMPONENT_REGISTRY`
+- `canvas_x: int`, `canvas_y: int` — sort key for output order
+- `enabled: bool` — skip if `False`
+- `properties: dict` — passed to `render_conky_text()` after merging with `DEFAULT_PROPERTIES`
+
+**COMPONENT_REGISTRY (36 types) lives in `src/gonky/models/component.py` but is populated by importing `src/gonky/components/__init__.py`. Both `config_generator.py` and `test_config_generator.py` must ensure this import happens.**
+
+**⚠️ Escaping risk:** `$` inside `conky.text` introduces a Conky variable. Only the `content` property of `CustomText` components contains user-typed text that must be escaped. All other component `render_conky_text()` outputs are raw Conky syntax and must never be passed through `_escape_conky_text()`.
 
 **Y-sort and linear output:** Components at the same Y are output left-to-right on the same visual line. The generator does not insert explicit X-positioning (Conky has no horizontal cursor movement). Document this as a known v1 limitation in both the UI tooltip and `docs/conky-variables-reference.md`.
+
+**Relevant files:**
+- `src/gonky/logic/config_generator.py` — stub to implement
+- `src/gonky/models/document.py` — `GonkyDocument` definition
+- `src/gonky/models/settings.py` — `GlobalConkySettings` definition
+- `src/gonky/models/component.py` — `ConkyComponent` definition and `COMPONENT_REGISTRY` dict
+- `src/gonky/components/__init__.py` — registry population (must be imported)
+- `src/gonky/components/base.py` — `AbstractComponent` and `PropertyField` base classes
+- `tests/test_config_generator.py` — stub to fill in
 
 ### Status
 - [ ] pending
