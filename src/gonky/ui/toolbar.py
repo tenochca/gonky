@@ -14,27 +14,27 @@ class ToolBar(Gtk.HeaderBar):
      to business logic in later sub-tasks, currently wired to no-op stubs
      """
 
-     def __init__(self) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
     # Left Side: File actions
 
-    self.btn_new = self._make_button("document-new-symbolic", "New project")
-    self.btn_open = self._make_button("document-open-symbolic", "Open project")
-    self.btn_save = self._make_button("document-save-symbolic", "Save project")
+        self.btn_new = self._make_button("document-new-symbolic", "New project")
+        self.btn_open = self._make_button("document-open-symbolic", "Open project")
+        self.btn_save = self._make_button("document-save-symbolic", "Save project")
 
-    for btn in (self.btn_new, self.btn_open, self.btn_save):
-        self.pack_start(btn)
+        for btn in (self.btn_new, self.btn_open, self.btn_save):
+            self.pack_start(btn)
     
     # Right Side: Workflow actions
 
-    self.btn_settings = self._make_button("emblem-system-symbolic", "Settings")
-    self.btn_apply = self._make_button("media-playback-start-symbolic", "Apply to Conky")
-    self.btn_preview = self._make_toggle("view-refresh-symbolic", "Toggle preview")
-    self.btn_export = self._make_button("document-send-symbolic", "Export config")
+        self.btn_settings = self._make_button("emblem-system-symbolic", "Settings")
+        self.btn_apply = self._make_button("media-playback-start-symbolic", "Apply to Conky")
+        self.btn_preview = self._make_toggle("view-refresh-symbolic", "Toggle preview")
+        self.btn_export = self._make_button("document-send-symbolic", "Export config")
 
-    for btn in (self.btn_settings, self.btn_apply, self.btn_preview, self.btn_export):
-        self.pack_end(btn)
+        for btn in (self.btn_settings, self.btn_apply, self.btn_preview, self.btn_export):
+            self.pack_end(btn)
 
 
     # Helpers
@@ -51,7 +51,7 @@ class ToolBar(Gtk.HeaderBar):
     @staticmethod
     def _make_toggle(icon_name: str, tooltip: str) -> Gtk.ToggleButton:
         "return a flat icon toggle button"
-        btn = Gtk.ToggleButton
+        btn = Gtk.ToggleButton()
         btn.set_icon_name(icon_name)
         btn.set_tooltip_text(tooltip)
         btn.add_css_class("flat")

@@ -9,6 +9,8 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # noqa: E402
 
+from gonky.ui.toolbar import ToolBar
+
 
 class MainWindow(Gtk.ApplicationWindow):
     """Primary application window.
@@ -19,6 +21,9 @@ class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.set_default_size(1024, 768)
+
+        self.toolbar = ToolBar()
+        self.set_titlebar(self.toolbar)
 
         # Placeholder label shown until the real UI is assembled in Sub-Task 4.
         placeholder = Gtk.Label(label="Gonky — canvas coming soon (Sub-Task 4)")
