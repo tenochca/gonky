@@ -1,3 +1,23 @@
 /* Gonky GTK CSS overrides */
 
-/* Placeholder — styles to be added during Sub-Task 4 (GUI Shell and Main Window Layout) */
+/* ── Status bar ─────────────────────────────────────────────────── */
+
+.statusbar {
+    border-top: 1px solid alpha(currentColor, 0.15);
+    padding: 2px 0;
+    font-size: 0.85em;
+}
+
+.conky-running { color: #57e389; } /* green */
+.conky-stopped { color: #c01c28; } /* red   */
+
+/* ── Canvas ─────────────────────────────────────────────────────── */
+
+.canvas {
+    background-color: #1e1e2e;
+}
+
+.canvas-placeholder {
+    color: alpha(white, 0.25);
+    font-size: 1.1em;
+}

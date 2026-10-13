@@ -5,9 +5,9 @@ import sys
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gio  # noqa: E402
+from gi.repository import Gtk, Gio, Gdk  # noqa: E402
 
-from gonky.constants import APP_ID, APP_NAME
+from gonky.constants import APP_ID, APP_CSS_PATH, APP_NAME
 from gonky.ui.main_window import MainWindow
 
 
@@ -33,9 +33,20 @@ class GonkyApp(Gtk.Application):
 
     def _on_activate(self, _app: Gtk.Application) -> None:
         """Called by GTK when the application is first started (or re-activated)."""
+        self._load_css()
         window = MainWindow(application=self)
         window.set_title(APP_NAME)
         window.present()
+
+    def _load_css(self) -> None:
+        """Load gonky.css into the default GTK display."""
+        provider = Gtk.CssProvider()
+        provider.load_from_path(str(APP_CSS_PATH))
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
 
     # ------------------------------------------------------------------
     # Public interface
