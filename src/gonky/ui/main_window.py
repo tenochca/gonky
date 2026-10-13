@@ -11,6 +11,7 @@ from gi.repository import Gtk  # noqa: E402
 
 from gonky.ui.toolbar import ToolBar
 from gonky.ui.statusbar import StatusBar
+from gonky.ui.component_library import ComponentLibrary
 
 
 class MainWindow(Gtk.ApplicationWindow):
@@ -29,6 +30,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.statusbar = StatusBar()
         self.statusbar.set_message("Project loaded.")
         self.statusbar.set_conky_running(False)
+
+        self.component_library = ComponentLibrary()
 
         # Placeholder label shown until the real UI is assembled in Sub-Task 4.
         placeholder = Gtk.Label(label="Gonky — canvas coming soon (Sub-Task 4)")
