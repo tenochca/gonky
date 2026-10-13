@@ -5,12 +5,17 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # noqa: E402
 
+from typing import Callable
+from gonky.models.component import ConkyComponent
+
 
 class Canvas(Gtk.ScrolledWindow):
     """Centre panel providing a scrollable, fixed-coordinate drawing surface.
 
     Sub-Task 4: renders a dark background with a placeholder label.
     Sub-Task 5: the Gtk.Fixed child will host draggable component widgets.
+    Sub-Task 7: exposes on_component_selected / on_component_deselected hooks
+                so MainWindow can forward selection to the PropertiesPanel.
     """
 
     def __init__(self) -> None:
@@ -29,6 +34,12 @@ class Canvas(Gtk.ScrolledWindow):
 
         self._placeholder = self._make_placeholder()
         self.fixed.put(self._placeholder, 0, 0)
+
+        # Selection callbacks — set by MainWindow in Sub-Task 7.
+        # on_component_selected(component) — called when a tile is clicked.
+        # on_component_deselected()        — called when selection is cleared.
+        self.on_component_selected: Callable[[ConkyComponent], None] | None = None
+        self.on_component_deselected: Callable[[], None] | None = None
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -55,3 +66,13 @@ class Canvas(Gtk.ScrolledWindow):
         if self._placeholder is not None:
             self.fixed.remove(self._placeholder)
             self._placeholder = None
+
+    def notify_selected(self, component: ConkyComponent) -> None:
+        """Called by a component tile when it is clicked/selected."""
+        if self.on_component_selected is not None:
+            self.on_component_selected(component)
+
+    def notify_deselected(self) -> None:
+        """Called when the canvas background is clicked (selection cleared)."""
+        if self.on_component_deselected is not None:
+            self.on_component_deselected()

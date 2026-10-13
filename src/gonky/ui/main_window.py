@@ -8,6 +8,7 @@ from gi.repository import Gtk  # noqa: E402
 from gonky.models.document import GonkyDocument
 from gonky.ui.canvas import Canvas
 from gonky.ui.component_library import ComponentLibrary
+from gonky.ui.dialogs.global_settings import GlobalSettingsDialog
 from gonky.ui.properties_panel import PropertiesPanel
 from gonky.ui.statusbar import StatusBar
 from gonky.ui.toolbar import ToolBar
@@ -43,6 +44,18 @@ class MainWindow(Gtk.ApplicationWindow):
         self.canvas = Canvas()
         self.properties_panel = PropertiesPanel()
         self.statusbar = StatusBar()
+
+        # Wire canvas selection → PropertiesPanel
+        self.canvas.on_component_selected = (
+            lambda c: self.properties_panel.show_component(c, self.on_document_changed)
+        )
+        self.canvas.on_component_deselected = self.properties_panel.clear
+
+        # Wire toolbar settings button → GlobalSettingsDialog
+        self.toolbar.btn_settings.connect(
+            "clicked",
+            lambda _: GlobalSettingsDialog.open(self, self.document, self.on_document_changed),
+        )
 
         # -- Layout: inner pane — canvas (flex) | properties (fixed 280px) -
         inner_paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
