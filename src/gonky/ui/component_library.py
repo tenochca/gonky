@@ -1,12 +1,11 @@
-"""Component library panel — stub for Sub-Task 4."""
-# Implemented in Sub-Task 4 (GUI Shell and Main Window Layout).
+"""Component library panel — scrollable grouped list of available components."""
 
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk
+from gi.repository import Gtk  # noqa: E402
 
-import gonky.components
+import gonky.components  # noqa: F401 — populates COMPONENT_REGISTRY
 from gonky.models.component import COMPONENT_REGISTRY
 
 
@@ -37,7 +36,9 @@ class ComponentLibrary(Gtk.ScrolledWindow):
 
         self._populate()
 
-        #private helpers
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
     def _populate(self) -> None:
         "Insert header + item rows for each category"
@@ -92,9 +93,11 @@ class ComponentLibrary(Gtk.ScrolledWindow):
         row.type_key = component_cls.TYPE_KEY
         self._list_box.append(row) 
 
-    #public interface
+    # ------------------------------------------------------------------
+    # Public interface
+    # ------------------------------------------------------------------
 
     def get_selected_type_key(self) -> str | None:
-        "return the type key of the currently selected row, or none"
+        """Return the TYPE_KEY of the currently selected row, or None."""
         row = self._list_box.get_selected_row()
         return getattr(row, "type_key", None)            
