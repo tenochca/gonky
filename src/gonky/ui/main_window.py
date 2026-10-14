@@ -80,3 +80,14 @@ class MainWindow(Gtk.ApplicationWindow):
         Sub-Task 4: stub — does nothing yet.
         Sub-Tasks 5–9: will set dirty flag, update title, debounce preview.
         """
+
+    def on_selection_changed(self, component_id: str | None) -> None:
+        """Called by the canvas when the selected component changes.
+
+        *component_id* is the id of the newly selected component, or None when
+        the selection is cleared.
+
+        Sub-Task 5: stores the id for use by Sub-Task 7 (properties panel).
+        Sub-Task 7: will call self.properties_panel.load_component(component).
+        """
+        self.selected_component_id: str | None = component_id

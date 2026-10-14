@@ -22,9 +22,12 @@ class CanvasTile(Gtk.Box):
     Minimum size is enforced at 120×40 px as per the tile visual spec.
     """
 
-    def __init__(self, component: ConkyComponent, display_name: str) -> None:
+    def __init__(
+        self, component: ConkyComponent, display_name: str, canvas: "Canvas"
+    ) -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.component = component  # live reference — mutated by canvas operations
+        self._canvas = canvas  # back-reference for selection callbacks
         self.set_size_request(120, 40)
         self.add_css_class("canvas-tile")
 
@@ -50,10 +53,27 @@ class CanvasTile(Gtk.Box):
         self._drag_offset_y: float = 0.0
 
         self._setup_drag_source()
+        self._setup_click_gesture()
 
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _setup_click_gesture(self) -> None:
+        """Attach a Gtk.GestureClick so clicking the tile selects it."""
+        gesture = Gtk.GestureClick()
+        gesture.set_button(1)  # primary mouse button
+
+        def on_pressed(
+            _gesture: Gtk.GestureClick,
+            _n_press: int,
+            _x: float,
+            _y: float,
+        ) -> None:
+            self._canvas.select_tile(self.component.id)
+
+        gesture.connect("pressed", on_pressed)
+        self.add_controller(gesture)
 
     def _setup_drag_source(self) -> None:
         """Attach a Gtk.DragSource for tile-move operations."""
@@ -115,6 +135,9 @@ class Canvas(Gtk.ScrolledWindow):
         # Back-reference to MainWindow — wired up after construction.
         self.main_window = None  # type: ignore[assignment]
 
+        # Currently selected component id (None = nothing selected).
+        self.selected_component_id: str | None = None
+
         # tile_map: component id -> CanvasTile, for O(1) lookup
         self._tile_map: dict[str, CanvasTile] = {}
 
@@ -130,6 +153,8 @@ class Canvas(Gtk.ScrolledWindow):
 
         # Wire up drop target for library → canvas drops.
         self._setup_drop_target()
+        # Wire up click-on-blank-area for deselect.
+        self._setup_background_click()
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -167,6 +192,25 @@ class Canvas(Gtk.ScrolledWindow):
         if self._placeholder is None:
             self._placeholder = self._make_placeholder()
         self.fixed.put(self._placeholder, 0, 0)
+
+    def _setup_background_click(self) -> None:
+        """Attach a Gtk.GestureClick on the Gtk.Fixed to deselect on blank clicks."""
+        gesture = Gtk.GestureClick()
+        gesture.set_button(1)
+
+        def on_pressed(
+            _gesture: Gtk.GestureClick,
+            _n_press: int,
+            _x: float,
+            _y: float,
+        ) -> None:
+            self.deselect_all()
+            self.selected_component_id = None
+            if self.main_window is not None:
+                self.main_window.on_selection_changed(None)
+
+        gesture.connect("pressed", on_pressed)
+        self.fixed.add_controller(gesture)
 
     def _setup_drop_target(self) -> None:
         """Attach a Gtk.DropTarget to the Gtk.Fixed for all canvas drops.
@@ -223,7 +267,7 @@ class Canvas(Gtk.ScrolledWindow):
             self.main_window.on_document_changed()
 
         # Create and place the tile.
-        tile = CanvasTile(component, component_cls.DISPLAY_NAME)
+        tile = CanvasTile(component, component_cls.DISPLAY_NAME, self)
         self.add_tile(tile, canvas_x, canvas_y)
         return True
 
@@ -256,6 +300,21 @@ class Canvas(Gtk.ScrolledWindow):
         self._hide_placeholder()
         self._tile_map[tile.component.id] = tile
         self.fixed.put(tile, x, y)
+
+    def select_tile(self, component_id: str) -> None:
+        """Select the tile for *component_id*, deselecting all others.
+
+        Updates :attr:`selected_component_id` and notifies the main window via
+        :meth:`~MainWindow.on_selection_changed` so the properties panel can
+        refresh.
+        """
+        self.deselect_all()
+        tile = self._tile_map.get(component_id)
+        if tile is not None:
+            tile.set_selected(True)
+        self.selected_component_id = component_id
+        if self.main_window is not None:
+            self.main_window.on_selection_changed(component_id)
 
     def move_tile(self, component_id: str, x: int, y: int) -> None:
         """Move an existing tile to the new canvas coordinates."""
