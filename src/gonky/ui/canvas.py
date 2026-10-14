@@ -61,6 +61,13 @@ class Canvas(Gtk.ScrolledWindow):
     # Public interface
     # ------------------------------------------------------------------
 
+    def rebuild_from_document(self, doc: "GonkyDocument") -> None:  # type: ignore[name-defined]
+        """Rebuild the canvas from *doc*.
+
+        Full implementation is part of Sub-Task 5. This stub exists so that
+        the file-management layer (Sub-Task 9) can call it without error.
+        """
+
     def remove_placeholder(self) -> None:
         """Hide the placeholder once real components are present."""
         if self._placeholder is not None:
