@@ -219,8 +219,7 @@ class Canvas(Gtk.ScrolledWindow):
         ) -> None:
             self.deselect_all()
             self.selected_component_id = None
-            if self.main_window is not None:
-                self.main_window.on_selection_changed(None)
+            self.notify_deselected()
 
         gesture.connect("pressed", on_pressed)
         self.fixed.add_controller(gesture)
@@ -350,10 +349,9 @@ class Canvas(Gtk.ScrolledWindow):
     def select_tile(self, component_id: str) -> None:
         """Select the tile for *component_id*, deselecting all others.
 
-        Updates :attr:`selected_component_id` and notifies the main window via
-        :meth:`~MainWindow.on_selection_changed` so the properties panel can
-        refresh.  Grabs keyboard focus on the fixed surface so Delete events
-        are delivered to the key controller.
+        Updates :attr:`selected_component_id` and notifies the properties panel
+        via :meth:`notify_selected`.  Grabs keyboard focus on the fixed surface
+        so Delete events are delivered to the key controller.
 
         Also brings the tile to the front of the z-order by removing and
         re-placing it at its stored coordinates — this ensures the selected
@@ -369,8 +367,8 @@ class Canvas(Gtk.ScrolledWindow):
         self.selected_component_id = component_id
         # Grab focus so key events (Delete) reach the EventControllerKey.
         self.fixed.grab_focus()
-        if self.main_window is not None:
-            self.main_window.on_selection_changed(component_id)
+        if tile is not None:
+            self.notify_selected(tile.component)
 
     def move_tile(self, component_id: str, x: int, y: int) -> None:
         """Move an existing tile to the new canvas coordinates."""
