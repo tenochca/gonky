@@ -7,6 +7,7 @@ from gi.repository import Gdk, GObject, Gtk  # noqa: E402
 
 import gonky.components  # noqa: F401 — populates COMPONENT_REGISTRY
 from gonky.models.component import COMPONENT_REGISTRY, ConkyComponent
+from gonky.models.document import GonkyDocument
 
 # Prefix used to distinguish tile-move DnD payloads from library-item payloads.
 _TILE_DRAG_PREFIX = "tile:"
@@ -389,6 +390,39 @@ class Canvas(Gtk.ScrolledWindow):
         self.selected_component_id = None
         if self.main_window is not None:
             self.main_window.on_selection_changed(None)
+
+    def rebuild_from_document(self, doc: GonkyDocument) -> None:
+        """Reconstruct all tiles from a loaded document.
+
+        Clears every existing tile from the canvas, then creates one
+        :class:`CanvasTile` per :class:`~gonky.models.component.ConkyComponent`
+        in the document at its stored ``canvas_x``/``canvas_y`` position.
+
+        Calling this method also clears the current selection.
+        """
+        # Clear existing tiles.
+        for component_id in list(self._tile_map):
+            tile = self._tile_map.pop(component_id)
+            self.fixed.remove(tile)
+        self.selected_component_id = None
+
+        # Restore placeholder if document has no components.
+        if not doc.components:
+            self._show_placeholder_if_empty()
+            return
+
+        self._hide_placeholder()
+
+        for component in doc.components:
+            component_cls = COMPONENT_REGISTRY.get(component.component_type)
+            display_name = (
+                component_cls.DISPLAY_NAME
+                if component_cls is not None
+                else component.component_type
+            )
+            tile = CanvasTile(component, display_name, self)
+            self._tile_map[component.id] = tile
+            self.fixed.put(tile, component.canvas_x, component.canvas_y)
 
     def deselect_all(self) -> None:
         """Remove the selected CSS class from every tile."""
