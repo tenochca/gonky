@@ -5,9 +5,11 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # noqa: E402
 
+from gonky.logic.validator import Validator
 from gonky.models.document import GonkyDocument
 from gonky.ui.canvas import Canvas
 from gonky.ui.component_library import ComponentLibrary
+from gonky.ui.dialogs.error_dialog import show_validation_errors
 from gonky.ui.properties_panel import PropertiesPanel
 from gonky.ui.statusbar import StatusBar
 from gonky.ui.toolbar import ToolBar
@@ -37,6 +39,10 @@ class MainWindow(Gtk.ApplicationWindow):
         # -- Toolbar (HeaderBar) -----------------------------------------
         self.toolbar = ToolBar()
         self.set_titlebar(self.toolbar)
+
+        # Wire validation-guarded Export and Apply actions
+        self.toolbar.btn_export.connect("clicked", self._on_export_clicked)
+        self.toolbar.btn_apply.connect("clicked", self._on_apply_clicked)
 
         # -- Panels -------------------------------------------------------
         self.component_library = ComponentLibrary()
@@ -80,6 +86,45 @@ class MainWindow(Gtk.ApplicationWindow):
         Sub-Task 4: stub — does nothing yet.
         Sub-Tasks 5–9: will set dirty flag, update title, debounce preview.
         """
+
+    # ------------------------------------------------------------------
+    # Validation-guarded Export / Apply handlers (Sub-Task 10)
+    # ------------------------------------------------------------------
+
+    def _run_validation_guard(self) -> bool:
+        """Run Validator against self.document.
+
+        Returns True if it is safe to proceed (no errors).  Errors are shown
+        in a blocking dialog; warnings also trigger a dialog but the user may
+        choose to proceed.
+        """
+        validator = Validator()
+        findings = validator.validate(self.document)
+
+        if not findings:
+            return True
+
+        has_errors = any(f.severity == "error" for f in findings)
+
+        if has_errors:
+            # Blocking — user must fix errors first.
+            show_validation_errors(self, findings, allow_proceed=False)
+            return False
+
+        # Warnings only — user may proceed.
+        return show_validation_errors(self, findings, allow_proceed=True)
+
+    def _on_export_clicked(self, _btn: Gtk.Button) -> None:
+        """Validate the document before running the export flow."""
+        if not self._run_validation_guard():
+            return
+        # Export logic is implemented in Sub-Task 9; placeholder for now.
+
+    def _on_apply_clicked(self, _btn: Gtk.Button) -> None:
+        """Validate the document before applying the config to Conky."""
+        if not self._run_validation_guard():
+            return
+        # Apply logic is implemented in Sub-Task 9; placeholder for now.
 
     def on_selection_changed(self, component_id: str | None) -> None:
         """Called by the canvas when the selected component changes.
