@@ -3,10 +3,13 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, GLib, GObject, Gtk  # noqa: E402
+from gi.repository import Gdk, GObject, Gtk  # noqa: E402
 
 import gonky.components  # noqa: F401 — populates COMPONENT_REGISTRY
 from gonky.models.component import COMPONENT_REGISTRY, ConkyComponent
+
+# Prefix used to distinguish tile-move DnD payloads from library-item payloads.
+_TILE_DRAG_PREFIX = "tile:"
 
 
 class CanvasTile(Gtk.Box):
@@ -41,6 +44,35 @@ class CanvasTile(Gtk.Box):
         self.append(self._name_label)
 
         self.set_selected(False)
+
+        # Track pointer offset at drag-start so the tile doesn't jump.
+        self._drag_offset_x: float = 0.0
+        self._drag_offset_y: float = 0.0
+
+        self._setup_drag_source()
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _setup_drag_source(self) -> None:
+        """Attach a Gtk.DragSource for tile-move operations."""
+        drag_source = Gtk.DragSource()
+        drag_source.set_actions(Gdk.DragAction.MOVE)
+
+        def on_prepare(
+            source: Gtk.DragSource, x: float, y: float
+        ) -> Gdk.ContentProvider:
+            # Remember where inside the tile the drag started.
+            self._drag_offset_x = x
+            self._drag_offset_y = y
+            value = GObject.Value()
+            value.init(GObject.TYPE_STRING)
+            value.set_string(_TILE_DRAG_PREFIX + self.component.id)
+            return Gdk.ContentProvider.new_for_value(value)
+
+        drag_source.connect("prepare", on_prepare)
+        self.add_controller(drag_source)
 
     # ------------------------------------------------------------------
     # Public interface
@@ -137,25 +169,38 @@ class Canvas(Gtk.ScrolledWindow):
         self.fixed.put(self._placeholder, 0, 0)
 
     def _setup_drop_target(self) -> None:
-        """Attach a Gtk.DropTarget to the Gtk.Fixed for library → canvas drops."""
-        drop_target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.COPY)
-        drop_target.connect("drop", self._on_library_drop)
+        """Attach a Gtk.DropTarget to the Gtk.Fixed for all canvas drops.
+
+        Handles both library → canvas (COPY action, plain type key) and
+        tile-move (MOVE action, ``"tile:<id>"`` payload) drops via a single
+        controller that accepts both actions.
+        """
+        drop_target = Gtk.DropTarget.new(
+            GObject.TYPE_STRING,
+            Gdk.DragAction.COPY | Gdk.DragAction.MOVE,
+        )
+        drop_target.connect("drop", self._on_canvas_drop)
         self.fixed.add_controller(drop_target)
 
-    def _on_library_drop(
+    def _on_canvas_drop(
         self,
         _target: Gtk.DropTarget,
         value: str,
         x: float,
         y: float,
     ) -> bool:
+        """Dispatch canvas drops to the correct handler based on payload prefix."""
+        if value.startswith(_TILE_DRAG_PREFIX):
+            return self._on_tile_move_drop(value[len(_TILE_DRAG_PREFIX) :], x, y)
+        return self._on_library_drop(value, x, y)
+
+    def _on_library_drop(self, type_key: str, x: float, y: float) -> bool:
         """Handle a drop from the component library.
 
         Creates a new :class:`ConkyComponent` of the dropped type, appends it
         to the document, and places a :class:`CanvasTile` at the drop point.
         Returns True to indicate the drop was accepted.
         """
-        type_key: str = value
         component_cls = COMPONENT_REGISTRY.get(type_key)
         if component_cls is None:
             return False
@@ -180,6 +225,22 @@ class Canvas(Gtk.ScrolledWindow):
         # Create and place the tile.
         tile = CanvasTile(component, component_cls.DISPLAY_NAME)
         self.add_tile(tile, canvas_x, canvas_y)
+        return True
+
+    def _on_tile_move_drop(self, component_id: str, x: float, y: float) -> bool:
+        """Handle a tile-move drop — reposition the tile and update the model."""
+        tile = self._tile_map.get(component_id)
+        if tile is None:
+            return False
+
+        # Adjust by the drag-start offset so the tile follows the cursor.
+        new_x = max(0, int(x - tile._drag_offset_x))
+        new_y = max(0, int(y - tile._drag_offset_y))
+
+        self.move_tile(component_id, new_x, new_y)
+
+        if self.main_window is not None:
+            self.main_window.on_document_changed()
         return True
 
     # ------------------------------------------------------------------
