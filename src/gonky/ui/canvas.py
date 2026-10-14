@@ -337,11 +337,18 @@ class Canvas(Gtk.ScrolledWindow):
         :meth:`~MainWindow.on_selection_changed` so the properties panel can
         refresh.  Grabs keyboard focus on the fixed surface so Delete events
         are delivered to the key controller.
+
+        Also brings the tile to the front of the z-order by removing and
+        re-placing it at its stored coordinates — this ensures the selected
+        tile is always rendered on top of all others.
         """
         self.deselect_all()
         tile = self._tile_map.get(component_id)
         if tile is not None:
             tile.set_selected(True)
+            # Bring to front: remove then re-put at the same position.
+            self.fixed.remove(tile)
+            self.fixed.put(tile, tile.component.canvas_x, tile.component.canvas_y)
         self.selected_component_id = component_id
         # Grab focus so key events (Delete) reach the EventControllerKey.
         self.fixed.grab_focus()
