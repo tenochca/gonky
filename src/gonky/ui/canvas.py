@@ -155,6 +155,8 @@ class Canvas(Gtk.ScrolledWindow):
         self._setup_drop_target()
         # Wire up click-on-blank-area for deselect.
         self._setup_background_click()
+        # Wire up keyboard delete for removing the selected component.
+        self._setup_key_controller()
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -211,6 +213,32 @@ class Canvas(Gtk.ScrolledWindow):
 
         gesture.connect("pressed", on_pressed)
         self.fixed.add_controller(gesture)
+
+    def _setup_key_controller(self) -> None:
+        """Attach a Gtk.EventControllerKey to handle the Delete key.
+
+        The canvas must be focusable for key events to reach it; we set
+        ``can-focus`` on the :class:`Gtk.Fixed` so clicking a tile (or the
+        background) naturally moves focus here.
+        """
+        self.fixed.set_focusable(True)
+
+        key_ctrl = Gtk.EventControllerKey()
+
+        def on_key_pressed(
+            _ctrl: Gtk.EventControllerKey,
+            keyval: int,
+            _keycode: int,
+            _state: Gdk.ModifierType,
+        ) -> bool:
+            # Gdk.KEY_Delete = 0xffff
+            if keyval == Gdk.KEY_Delete:
+                self.delete_selected()
+                return True  # event consumed
+            return False
+
+        key_ctrl.connect("key-pressed", on_key_pressed)
+        self.fixed.add_controller(key_ctrl)
 
     def _setup_drop_target(self) -> None:
         """Attach a Gtk.DropTarget to the Gtk.Fixed for all canvas drops.
@@ -306,13 +334,16 @@ class Canvas(Gtk.ScrolledWindow):
 
         Updates :attr:`selected_component_id` and notifies the main window via
         :meth:`~MainWindow.on_selection_changed` so the properties panel can
-        refresh.
+        refresh.  Grabs keyboard focus on the fixed surface so Delete events
+        are delivered to the key controller.
         """
         self.deselect_all()
         tile = self._tile_map.get(component_id)
         if tile is not None:
             tile.set_selected(True)
         self.selected_component_id = component_id
+        # Grab focus so key events (Delete) reach the EventControllerKey.
+        self.fixed.grab_focus()
         if self.main_window is not None:
             self.main_window.on_selection_changed(component_id)
 
@@ -335,6 +366,29 @@ class Canvas(Gtk.ScrolledWindow):
     def get_tile(self, component_id: str) -> "CanvasTile | None":
         """Return the tile for *component_id*, or None if not present."""
         return self._tile_map.get(component_id)
+
+    def delete_selected(self) -> None:
+        """Delete the currently selected component from the document and canvas.
+
+        Does nothing if no component is selected.
+        """
+        component_id = self.selected_component_id
+        if component_id is None:
+            return
+
+        # Remove from document.
+        if self.main_window is not None:
+            doc = self.main_window.document
+            doc.components = [
+                c for c in doc.components if c.id != component_id
+            ]
+            self.main_window.on_document_changed()
+
+        # Remove tile from canvas.
+        self.remove_tile(component_id)
+        self.selected_component_id = None
+        if self.main_window is not None:
+            self.main_window.on_selection_changed(None)
 
     def deselect_all(self) -> None:
         """Remove the selected CSS class from every tile."""
