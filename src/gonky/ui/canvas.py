@@ -3,17 +3,18 @@
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gdk, GLib, GObject, Gtk  # noqa: E402
 
-from gonky.models.component import ConkyComponent
+import gonky.components  # noqa: F401 — populates COMPONENT_REGISTRY
+from gonky.models.component import COMPONENT_REGISTRY, ConkyComponent
 
 
 class CanvasTile(Gtk.Box):
     """Visual representation of one ConkyComponent on the canvas.
 
-    Displays the component icon name and label in a small card.  Visual
-    selection state is communicated via the ``canvas-tile-selected`` CSS
-    class (added/removed by :meth:`set_selected`).
+    Displays the component display name in a small card.  Visual selection
+    state is communicated via the ``canvas-tile-selected`` CSS class
+    (added/removed by :meth:`set_selected`).
 
     Minimum size is enforced at 120×40 px as per the tile visual spec.
     """
@@ -24,7 +25,7 @@ class CanvasTile(Gtk.Box):
         self.set_size_request(120, 40)
         self.add_css_class("canvas-tile")
 
-        # Icon label (text-based icon using the TYPE_KEY as a hint)
+        # Icon label (text-based icon placeholder)
         self._icon_label = Gtk.Label(label="⬜")
         self._icon_label.add_css_class("canvas-tile-icon")
         self._icon_label.set_valign(Gtk.Align.CENTER)
@@ -65,6 +66,11 @@ class Canvas(Gtk.ScrolledWindow):
     The canvas holds a reference to the parent :class:`MainWindow` (set after
     construction via :attr:`main_window`) so it can read/write the document
     and call ``on_document_changed()``.
+
+    A :class:`Gtk.DropTarget` on the :class:`Gtk.Fixed` child accepts
+    ``GObject.TYPE_STRING`` drops from the component library, creates a new
+    :class:`ConkyComponent`, and adds a :class:`CanvasTile` at the drop
+    coordinates.
     """
 
     def __init__(self) -> None:
@@ -89,6 +95,9 @@ class Canvas(Gtk.ScrolledWindow):
 
         self._placeholder: Gtk.Label | None = self._make_placeholder()
         self.fixed.put(self._placeholder, 0, 0)
+
+        # Wire up drop target for library → canvas drops.
+        self._setup_drop_target()
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -126,6 +135,52 @@ class Canvas(Gtk.ScrolledWindow):
         if self._placeholder is None:
             self._placeholder = self._make_placeholder()
         self.fixed.put(self._placeholder, 0, 0)
+
+    def _setup_drop_target(self) -> None:
+        """Attach a Gtk.DropTarget to the Gtk.Fixed for library → canvas drops."""
+        drop_target = Gtk.DropTarget.new(GObject.TYPE_STRING, Gdk.DragAction.COPY)
+        drop_target.connect("drop", self._on_library_drop)
+        self.fixed.add_controller(drop_target)
+
+    def _on_library_drop(
+        self,
+        _target: Gtk.DropTarget,
+        value: str,
+        x: float,
+        y: float,
+    ) -> bool:
+        """Handle a drop from the component library.
+
+        Creates a new :class:`ConkyComponent` of the dropped type, appends it
+        to the document, and places a :class:`CanvasTile` at the drop point.
+        Returns True to indicate the drop was accepted.
+        """
+        type_key: str = value
+        component_cls = COMPONENT_REGISTRY.get(type_key)
+        if component_cls is None:
+            return False
+
+        canvas_x = int(x)
+        canvas_y = int(y)
+
+        # Build the new component with default properties.
+        component = ConkyComponent(
+            component_type=type_key,
+            label=component_cls.DISPLAY_NAME,
+            canvas_x=canvas_x,
+            canvas_y=canvas_y,
+            properties=dict(component_cls.DEFAULT_PROPERTIES),
+        )
+
+        # Persist to document.
+        if self.main_window is not None:
+            self.main_window.document.components.append(component)
+            self.main_window.on_document_changed()
+
+        # Create and place the tile.
+        tile = CanvasTile(component, component_cls.DISPLAY_NAME)
+        self.add_tile(tile, canvas_x, canvas_y)
+        return True
 
     # ------------------------------------------------------------------
     # Public interface

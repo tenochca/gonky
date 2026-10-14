@@ -41,6 +41,7 @@ class MainWindow(Gtk.ApplicationWindow):
         # -- Panels -------------------------------------------------------
         self.component_library = ComponentLibrary()
         self.canvas = Canvas()
+        self.canvas.main_window = self  # back-reference for drop/delete handlers
         self.properties_panel = PropertiesPanel()
         self.statusbar = StatusBar()
 
