@@ -68,7 +68,7 @@ class CanvasTile(Gtk.Box):
         gesture.set_button(1)  # primary mouse button
 
         def on_pressed(
-            _gesture: Gtk.GestureClick,
+            gesture: Gtk.GestureClick,
             _n_press: int,
             _x: float,
             _y: float,
