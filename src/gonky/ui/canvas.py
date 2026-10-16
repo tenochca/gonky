@@ -5,6 +5,8 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GObject, Gtk  # noqa: E402
 
+from typing import Callable
+
 import gonky.components  # noqa: F401 — populates COMPONENT_REGISTRY
 from gonky.models.component import COMPONENT_REGISTRY, ConkyComponent
 from gonky.models.document import GonkyDocument
@@ -71,6 +73,10 @@ class CanvasTile(Gtk.Box):
             _x: float,
             _y: float,
         ) -> None:
+            # Claim the sequence so the parent Gtk.Fixed's GestureClick
+            # (which deselects on blank-canvas clicks) does not also fire
+            # for this same event and immediately undo the selection.
+            _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self._canvas.select_tile(self.component.id)
 
         gesture.connect("pressed", on_pressed)
@@ -124,6 +130,8 @@ class Canvas(Gtk.ScrolledWindow):
     ``GObject.TYPE_STRING`` drops from the component library, creates a new
     :class:`ConkyComponent`, and adds a :class:`CanvasTile` at the drop
     coordinates.
+    Sub-Task 7: exposes on_component_selected / on_component_deselected hooks
+                so MainWindow can forward selection to the PropertiesPanel.
     """
 
     def __init__(self) -> None:
@@ -151,6 +159,12 @@ class Canvas(Gtk.ScrolledWindow):
 
         self._placeholder: Gtk.Label | None = self._make_placeholder()
         self.fixed.put(self._placeholder, 0, 0)
+
+        # Selection callbacks — set by MainWindow in Sub-Task 7.
+        # on_component_selected(component) — called when a tile is clicked.
+        # on_component_deselected()        — called when selection is cleared.
+        self.on_component_selected: Callable[[ConkyComponent], None] | None = None
+        self.on_component_deselected: Callable[[], None] | None = None
 
         # Wire up drop target for library → canvas drops.
         self._setup_drop_target()
@@ -209,8 +223,7 @@ class Canvas(Gtk.ScrolledWindow):
         ) -> None:
             self.deselect_all()
             self.selected_component_id = None
-            if self.main_window is not None:
-                self.main_window.on_selection_changed(None)
+            self.notify_deselected()
 
         gesture.connect("pressed", on_pressed)
         self.fixed.add_controller(gesture)
@@ -333,10 +346,9 @@ class Canvas(Gtk.ScrolledWindow):
     def select_tile(self, component_id: str) -> None:
         """Select the tile for *component_id*, deselecting all others.
 
-        Updates :attr:`selected_component_id` and notifies the main window via
-        :meth:`~MainWindow.on_selection_changed` so the properties panel can
-        refresh.  Grabs keyboard focus on the fixed surface so Delete events
-        are delivered to the key controller.
+        Updates :attr:`selected_component_id` and notifies the properties panel
+        via :meth:`notify_selected`.  Grabs keyboard focus on the fixed surface
+        so Delete events are delivered to the key controller.
 
         Also brings the tile to the front of the z-order by removing and
         re-placing it at its stored coordinates — this ensures the selected
@@ -352,8 +364,8 @@ class Canvas(Gtk.ScrolledWindow):
         self.selected_component_id = component_id
         # Grab focus so key events (Delete) reach the EventControllerKey.
         self.fixed.grab_focus()
-        if self.main_window is not None:
-            self.main_window.on_selection_changed(component_id)
+        if tile is not None:
+            self.notify_selected(tile.component)
 
     def move_tile(self, component_id: str, x: int, y: int) -> None:
         """Move an existing tile to the new canvas coordinates."""
@@ -435,3 +447,13 @@ class Canvas(Gtk.ScrolledWindow):
         """Remove the selected CSS class from every tile."""
         for tile in self._tile_map.values():
             tile.set_selected(False)
+
+    def notify_selected(self, component: ConkyComponent) -> None:
+        """Called by a component tile when it is clicked/selected."""
+        if self.on_component_selected is not None:
+            self.on_component_selected(component)
+
+    def notify_deselected(self) -> None:
+        """Called when the canvas background is clicked (selection cleared)."""
+        if self.on_component_deselected is not None:
+            self.on_component_deselected()
