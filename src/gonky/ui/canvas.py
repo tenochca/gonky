@@ -73,6 +73,10 @@ class CanvasTile(Gtk.Box):
             _x: float,
             _y: float,
         ) -> None:
+            # Claim the sequence so the parent Gtk.Fixed's GestureClick
+            # (which deselects on blank-canvas clicks) does not also fire
+            # for this same event and immediately undo the selection.
+            _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self._canvas.select_tile(self.component.id)
 
         gesture.connect("pressed", on_pressed)
@@ -328,13 +332,6 @@ class Canvas(Gtk.ScrolledWindow):
     # ------------------------------------------------------------------
     # Public interface
     # ------------------------------------------------------------------
-
-    def rebuild_from_document(self, doc: "GonkyDocument") -> None:  # type: ignore[name-defined]
-        """Rebuild the canvas from *doc*.
-
-        Full implementation is part of Sub-Task 5. This stub exists so that
-        the file-management layer (Sub-Task 9) can call it without error.
-        """
 
     def remove_placeholder(self) -> None:
         """Hide the placeholder once real components are present (legacy API)."""
