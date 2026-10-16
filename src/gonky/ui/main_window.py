@@ -8,6 +8,8 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk  # noqa: E402
 
 from gonky.logic import file_manager
+from gonky.logic.preview_manager import PreviewManager
+from gonky.logic.process_manager import is_conky_installed
 from gonky.logic.validator import Validator
 from gonky.models.document import GonkyDocument, SchemaVersionError
 from gonky.ui.canvas import Canvas
@@ -55,6 +57,9 @@ class MainWindow(Gtk.ApplicationWindow):
         # Dirty flag — True when there are unsaved changes.
         self._is_dirty: bool = False
 
+        # Preview manager — one instance for the lifetime of this window.
+        self._preview_manager = PreviewManager()
+
         # -- Toolbar (HeaderBar) -----------------------------------------
         self.toolbar = ToolBar()
         self.set_titlebar(self.toolbar)
@@ -63,6 +68,14 @@ class MainWindow(Gtk.ApplicationWindow):
         # Wire validation-guarded Export and Apply actions
         self.toolbar.btn_export.connect("clicked", self._on_export_clicked)
         self.toolbar.btn_apply.connect("clicked", self._on_apply_clicked)
+
+        # Wire Preview toggle button
+        self.toolbar.btn_preview.set_tooltip_text(
+            "Preview launches a separate Conky instance. "
+            "If Conky is already running without --config, "
+            "you may need to stop it first."
+        )
+        self.toolbar.btn_preview.connect("toggled", self._on_preview_toggled)
 
         # -- Panels -------------------------------------------------------
         self.component_library = ComponentLibrary()
@@ -192,6 +205,13 @@ class MainWindow(Gtk.ApplicationWindow):
     # ------------------------------------------------------------------
     # Toolbar handlers
     # ------------------------------------------------------------------
+
+    def _on_preview_toggled(self, btn: Gtk.ToggleButton) -> None:
+        """Handle Preview toggle — start or stop the Conky preview subprocess."""
+        if btn.get_active():
+            self._preview_manager.start_preview(self.document)
+        else:
+            self._preview_manager.stop_preview()
 
     def _on_new(self, _btn: Gtk.Button) -> None:
         """Handle New — guard against unsaved changes, then prompt for a name."""
