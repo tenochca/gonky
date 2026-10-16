@@ -136,9 +136,12 @@ class MainWindow(Gtk.ApplicationWindow):
         """Called by any panel after mutating self.document.
 
         Sets the dirty flag and updates the window title to show an asterisk.
+        When the preview is active, schedules a debounced refresh (1.5 s).
         """
         self._is_dirty = True
         self._update_title()
+        if self._preview_manager.is_active:
+            self._preview_manager.schedule_refresh(self.document)
 
     def _load_document(self, doc: GonkyDocument, path: str | None = None) -> None:
         """Replace the active document, reset dirty state, rebuild the canvas."""
