@@ -1,5 +1,6 @@
 """GonkyApp — Gtk.Application subclass managing the application lifecycle."""
 
+import atexit
 import sys
 
 import gi
@@ -37,6 +38,9 @@ class GonkyApp(Gtk.Application):
         window = MainWindow(application=self)
         window.set_title(APP_NAME)
         window.present()
+        # Ensure the preview Conky process is killed when Python exits, even if
+        # the window was closed without toggling the preview off first.
+        atexit.register(window._preview_manager.stop_preview)
 
     def _load_css(self) -> None:
         """Load gonky.css into the default GTK display."""
