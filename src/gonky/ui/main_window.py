@@ -210,8 +210,31 @@ class MainWindow(Gtk.ApplicationWindow):
     # ------------------------------------------------------------------
 
     def _on_preview_toggled(self, btn: Gtk.ToggleButton) -> None:
-        """Handle Preview toggle — start or stop the Conky preview subprocess."""
+        """Handle Preview toggle — start or stop the Conky preview subprocess.
+
+        When Conky is not installed a :class:`Gtk.MessageDialog` is shown
+        and the button is set back to the inactive state so it does not remain
+        in a pressed-but-no-process state.
+        """
         if btn.get_active():
+            if not is_conky_installed():
+                dlg = Gtk.MessageDialog(
+                    transient_for=self,
+                    modal=True,
+                    message_type=Gtk.MessageType.ERROR,
+                    buttons=Gtk.ButtonsType.OK,
+                    text="Conky is not installed",
+                    secondary_text=(
+                        "Gonky could not find the conky executable on your PATH. "
+                        "Please install Conky (e.g. 'sudo apt install conky-all') "
+                        "and try again."
+                    ),
+                )
+                dlg.connect("response", lambda d, _: d.destroy())
+                dlg.present()
+                # Untoggle the button so it does not appear stuck in the on state.
+                btn.set_active(False)
+                return
             self._preview_manager.start_preview(self.document)
         else:
             self._preview_manager.stop_preview()
