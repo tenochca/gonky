@@ -76,7 +76,7 @@ class CanvasTile(Gtk.Box):
             # Claim the sequence so the parent Gtk.Fixed's GestureClick
             # (which deselects on blank-canvas clicks) does not also fire
             # for this same event and immediately undo the selection.
-            _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self._canvas.select_tile(self.component.id)
 
         gesture.connect("pressed", on_pressed)
