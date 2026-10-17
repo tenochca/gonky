@@ -5,7 +5,7 @@ from __future__ import annotations
 import gi
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk  # noqa: E402
+from gi.repository import Gtk, Gio  # noqa: E402
 
 from gonky.logic import file_manager
 from gonky.logic.preview_manager import PreviewManager
@@ -71,7 +71,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         # Wire Preview toggle button
         self.toolbar.btn_preview.set_tooltip_text(
-            "Preview launches a separate Conky instance. "
+            "Preview launches a separate Conky instance (Ctrl+P). "
             "If Conky is already running without --config, "
             "you may need to stop it first."
         )
@@ -103,6 +103,9 @@ class MainWindow(Gtk.ApplicationWindow):
         # Close guard — intercept the window-close request.
         self.connect("close-request", self._on_close_request)
 
+        # Register named window actions so keyboard accelerators work.
+        self._register_window_actions()
+
         # -- Layout: inner pane — canvas (flex) | properties (fixed 280px) -
         inner_paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         inner_paned.set_start_child(self.canvas)
@@ -127,6 +130,33 @@ class MainWindow(Gtk.ApplicationWindow):
         root_box.append(outer_paned)
         root_box.append(self.statusbar)
         self.set_child(root_box)
+
+    # ------------------------------------------------------------------
+    # Window actions (keyboard shortcut targets)
+    # ------------------------------------------------------------------
+
+    def _register_window_actions(self) -> None:
+        """Register win.* Gio.SimpleAction objects for keyboard accelerators.
+
+        Each action delegates to the corresponding toolbar handler so that
+        both button clicks and keyboard shortcuts share the same code path.
+        """
+        actions: list[tuple[str, "Callable[[], None]"]] = [  # type: ignore[name-defined]
+            ("new",     lambda: self._on_new(None)),
+            ("open",    lambda: self._on_open(None)),
+            ("save",    lambda: self._on_save(None)),
+            ("export",  lambda: self._on_export(None)),
+            ("preview", self._toggle_preview_action),
+        ]
+        for name, callback in actions:
+            action = Gio.SimpleAction.new(name, None)
+            action.connect("activate", lambda _a, _p, cb=callback: cb())
+            self.add_action(action)
+
+    def _toggle_preview_action(self) -> None:
+        """Toggle the preview button state (called from the keyboard shortcut)."""
+        btn = self.toolbar.btn_preview
+        btn.set_active(not btn.get_active())
 
     # ------------------------------------------------------------------
     # Document lifecycle
