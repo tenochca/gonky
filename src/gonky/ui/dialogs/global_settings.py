@@ -90,6 +90,26 @@ class GlobalSettingsDialog(Gtk.Window):
         content.set_margin_bottom(8)
         scroll.set_child(content)
 
+        # -- Project name row (edits document.project_name directly) --------
+        name_field = PropertyField(
+            key="project_name",
+            label="Project Name",
+            field_type="text",
+            default="Untitled",
+        )
+
+        def _on_name_changed(value: str) -> None:
+            document.project_name = value.strip() or "Untitled"
+            on_document_changed()
+
+        content.append(form_builder.make_field_widget(name_field, document.project_name, _on_name_changed))
+
+        # -- Separator -------------------------------------------------------
+        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep.set_margin_top(4)
+        sep.set_margin_bottom(4)
+        content.append(sep)
+
         # Build one row per field
         settings = document.settings
         for field in _SETTINGS_FIELDS:
