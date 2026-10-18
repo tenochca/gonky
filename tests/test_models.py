@@ -32,6 +32,7 @@ class TestGlobalConkySettings:
         assert s.border_width == 0
         assert s.cpu_avg_samples == 2
         assert s.net_avg_samples == 2
+        assert s.own_window_colour == ""
         assert s.extra_lua == ""
 
     def test_custom_values(self):
@@ -49,7 +50,8 @@ class TestConkyComponent:
     def test_defaults(self):
         c = ConkyComponent()
         assert c.component_type == "text"
-        assert c.label == "Text"
+        assert c.label == ""
+        assert c.label_color == ""
         assert c.canvas_x == 0
         assert c.canvas_y == 0
         assert c.enabled is True

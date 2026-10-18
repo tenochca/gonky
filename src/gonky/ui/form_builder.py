@@ -116,11 +116,24 @@ def _build_input(
             font_btn.set_hexpand(True)
             if current_value:
                 font_btn.set_font(str(current_value))
-            font_btn.connect("font-set", lambda w: on_change(w.get_font()))
+            font_btn.connect("font-set", lambda w: on_change(_font_family(w.get_font())))
             return font_btn
 
         case _: # fallback
             return Gtk.Label(label=str(current_value))
+
+
+def _font_family(pango_desc: str) -> str:
+    """Strip the trailing size token from a Pango font description string.
+
+    ``Gtk.FontButton.get_font()`` returns strings like ``"DejaVu Sans Mono 10"``.
+    Only the family name (everything before the trailing integer) is stored so
+    that the config generator can compose ``Name:size=N`` without duplication.
+    """
+    parts = pango_desc.rsplit(" ", 1)
+    if len(parts) == 2 and parts[1].isdigit():
+        return parts[0]
+    return pango_desc
 
 
 def _wrap_row(label_text: str, widget: Gtk.Widget) -> Gtk.Box:

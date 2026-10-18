@@ -55,7 +55,7 @@ class DiskBar(AbstractComponent):
         width: int = props.get("width", 0)
         height: int = props.get("height", 0)
 
-        var = "diskbar"
+        var = "fs_bar"
         if height != 0:
             var += f" {height}"
             if width != 0:

@@ -2,9 +2,7 @@
 
 from gonky.components.advanced.exec import ExecCommand
 from gonky.components.advanced.lua_snippet import LuaSnippet
-from gonky.components.display.bar import GenericBar
 from gonky.components.display.clock import Clock, Date, Uptime
-from gonky.components.display.graph import GenericGraph
 from gonky.components.display.separator import Separator
 from gonky.components.display.spacer import Spacer
 from gonky.components.display.text import CustomText
@@ -68,8 +66,6 @@ COMPONENT_REGISTRY[Uptime.TYPE_KEY] = Uptime
 COMPONENT_REGISTRY[CustomText.TYPE_KEY] = CustomText
 COMPONENT_REGISTRY[Spacer.TYPE_KEY] = Spacer
 COMPONENT_REGISTRY[Separator.TYPE_KEY] = Separator
-COMPONENT_REGISTRY[GenericBar.TYPE_KEY] = GenericBar
-COMPONENT_REGISTRY[GenericGraph.TYPE_KEY] = GenericGraph
 
 # --- Advanced ---
 COMPONENT_REGISTRY[ExecCommand.TYPE_KEY] = ExecCommand

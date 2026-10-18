@@ -42,6 +42,13 @@ _SETTINGS_FIELDS: list[PropertyField] = [
     ),
     PropertyField(key="own_window_transparent", label="Transparent", field_type="bool", default=True),
     PropertyField(key="own_window_argb_visual", label="ARGB Visual", field_type="bool", default=True),
+    PropertyField(
+        key="own_window_colour",
+        label="Window Background Color",
+        field_type="color",
+        default="",
+        tooltip="Background color used when transparency is disabled",
+    ),
     PropertyField(key="background", label="Background", field_type="bool", default=False),
     PropertyField(key="double_buffer", label="Double Buffer", field_type="bool", default=True),
     PropertyField(key="border_width", label="Border Width", field_type="int", default=0, min_val=0),
@@ -82,6 +89,26 @@ class GlobalSettingsDialog(Gtk.Window):
         content.set_margin_top(8)
         content.set_margin_bottom(8)
         scroll.set_child(content)
+
+        # -- Project name row (edits document.project_name directly) --------
+        name_field = PropertyField(
+            key="project_name",
+            label="Project Name",
+            field_type="text",
+            default="Untitled",
+        )
+
+        def _on_name_changed(value: str) -> None:
+            document.project_name = value.strip() or "Untitled"
+            on_document_changed()
+
+        content.append(form_builder.make_field_widget(name_field, document.project_name, _on_name_changed))
+
+        # -- Separator -------------------------------------------------------
+        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        sep.set_margin_top(4)
+        sep.set_margin_bottom(4)
+        content.append(sep)
 
         # Build one row per field
         settings = document.settings

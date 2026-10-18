@@ -16,6 +16,7 @@ class GlobalConkySettings:
    own_window_type: str = "desktop"
    own_window_transparent: bool = True
    own_window_argb_visual: bool = True
+   own_window_colour: str = ""  # background colour when transparency is disabled; "" = omit
    background: bool = False
    border_width: int = 0
 
@@ -23,6 +24,7 @@ class GlobalConkySettings:
    default_font: str = "DejaVu Sans Mono" # font and size grouped in conky.config.font
    default_font_size: int = 10
    default_color: str = "white"
+   use_xft: bool = True
 
 
    # misc 

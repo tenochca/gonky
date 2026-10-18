@@ -108,7 +108,24 @@ class PropertiesPanel(Gtk.ScrolledWindow):
         )
         self._append_row("Label", label_entry)
 
-        # -- Universal row 2: enabled ------------------------------------
+        # -- Universal row 2: label color --------------------------------
+        def _on_label_color_changed(value: str) -> None:
+            component.label_color = value
+            on_changed()
+
+        label_color_field = PropertyField(
+            key="label_color",
+            label="Label Color",
+            field_type="color",
+            default="",
+            tooltip="Color of the label prefix; leave unset to inherit the default color",
+        )
+        label_color_row = form_builder.make_field_widget(
+            label_color_field, component.label_color, _on_label_color_changed
+        )
+        self._content_box.append(label_color_row)
+
+        # -- Universal row 3: enabled ------------------------------------
         enabled_switch = Gtk.Switch()
         enabled_switch.set_active(component.enabled)
         enabled_switch.set_halign(Gtk.Align.END)
@@ -117,6 +134,16 @@ class PropertiesPanel(Gtk.ScrolledWindow):
             lambda w, _: (setattr(component, "enabled", w.get_active()), on_changed()),
         )
         self._append_row("Enabled", enabled_switch)
+
+        # -- Universal row 4: no_newline ---------------------------------
+        no_newline_switch = Gtk.Switch()
+        no_newline_switch.set_active(component.no_newline)
+        no_newline_switch.set_halign(Gtk.Align.END)
+        no_newline_switch.connect(
+            "notify::active",
+            lambda w, _: (setattr(component, "no_newline", w.get_active()), on_changed()),
+        )
+        self._append_row("No newline", no_newline_switch)
 
         # -- Per-schema fields -------------------------------------------
         if cls is None:

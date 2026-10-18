@@ -65,13 +65,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_titlebar(self.toolbar)
         self._update_title()
 
-        # Wire validation-guarded Export and Apply actions
+        # Wire validation-guarded Export 
         self.toolbar.btn_export.connect("clicked", self._on_export_clicked)
-        self.toolbar.btn_apply.connect("clicked", self._on_apply_clicked)
 
         # Wire Preview toggle button
         self.toolbar.btn_preview.set_tooltip_text(
-            "Preview launches a separate Conky instance (Ctrl+P). "
+            "Toggle a separate Conky instance for preview (Ctrl+P). "
             "If Conky is already running without --config, "
             "you may need to stop it first."
         )
@@ -266,8 +265,12 @@ class MainWindow(Gtk.ApplicationWindow):
                 btn.set_active(False)
                 return
             self._preview_manager.start_preview(self.document)
+            self.statusbar.set_conky_running(True)
+            self.statusbar.set_message("Conky preview started")
         else:
             self._preview_manager.stop_preview()
+            self.statusbar.set_conky_running(False)
+            self.statusbar.set_message("Conky preview stopped")
 
     def _on_new(self, _btn: Gtk.Button) -> None:
         """Handle New — guard against unsaved changes, then prompt for a name."""
@@ -401,7 +404,7 @@ class MainWindow(Gtk.ApplicationWindow):
         dlg.present()
 
     # ------------------------------------------------------------------
-    # Validation-guarded Export / Apply handlers (Sub-Task 10)
+    # Validation-guarded Export 
     # ------------------------------------------------------------------
 
     def _run_validation_guard(self) -> bool:
@@ -432,12 +435,6 @@ class MainWindow(Gtk.ApplicationWindow):
         if not self._run_validation_guard():
             return
         # Export logic is implemented in Sub-Task 9; placeholder for now.
-
-    def _on_apply_clicked(self, _btn: Gtk.Button) -> None:
-        """Validate the document before applying the config to Conky."""
-        if not self._run_validation_guard():
-            return
-        # Apply logic is implemented in Sub-Task 9; placeholder for now.
 
     def on_selection_changed(self, component_id: str | None) -> None:
         """Called by the canvas when the selected component changes.
