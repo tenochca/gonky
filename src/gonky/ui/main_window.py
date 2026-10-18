@@ -71,7 +71,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         # Wire Preview toggle button
         self.toolbar.btn_preview.set_tooltip_text(
-            "Preview launches a separate Conky instance (Ctrl+P). "
+            "Toggle a separate Conky instance for preview (Ctrl+P). "
             "If Conky is already running without --config, "
             "you may need to stop it first."
         )

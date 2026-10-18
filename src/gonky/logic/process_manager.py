@@ -14,12 +14,13 @@ def is_conky_installed() -> bool:
 def start_conky(config_path: Path) -> subprocess.Popen:
     """Launch Conky with *config_path* and return the resulting Popen handle.
 
-    Conky is started with ``--daemonize`` so it backgrounds itself and returns
-    control to the caller immediately.  stdout/stderr are suppressed to avoid
-    polluting the terminal.
+    Conky is started without ``--daemonize`` so the process remains a direct
+    child of this process — this is required for ``stop_conky`` to be able to
+    terminate it reliably.  stdout/stderr are suppressed to avoid polluting the
+    terminal.
     """
     return subprocess.Popen(
-        ["conky", "-c", str(config_path), "--daemonize"],
+        ["conky", "-c", str(config_path)],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
