@@ -23,6 +23,7 @@ class GlobalConkySettings:
    default_font: str = "DejaVu Sans Mono" # font and size grouped in conky.config.font
    default_font_size: int = 10
    default_color: str = "white"
+   use_xft: bool = True
 
 
    # misc 

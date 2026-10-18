@@ -52,6 +52,7 @@ class ConfigGenerator:
         config += f"    border_width = {settings.border_width},\n"
         config += f"    cpu_avg_samples = {settings.cpu_avg_samples},\n"
         config += f"    net_avg_samples = {settings.net_avg_samples},\n"
+        config += f"    use_xft = {b(settings.use_xft)},\n"
         config += "}\n"
         return config
 
