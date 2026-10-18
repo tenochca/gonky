@@ -65,9 +65,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.set_titlebar(self.toolbar)
         self._update_title()
 
-        # Wire validation-guarded Export and Apply actions
+        # Wire validation-guarded Export 
         self.toolbar.btn_export.connect("clicked", self._on_export_clicked)
-        self.toolbar.btn_apply.connect("clicked", self._on_apply_clicked)
 
         # Wire Preview toggle button
         self.toolbar.btn_preview.set_tooltip_text(
@@ -401,7 +400,7 @@ class MainWindow(Gtk.ApplicationWindow):
         dlg.present()
 
     # ------------------------------------------------------------------
-    # Validation-guarded Export / Apply handlers (Sub-Task 10)
+    # Validation-guarded Export 
     # ------------------------------------------------------------------
 
     def _run_validation_guard(self) -> bool:
@@ -432,12 +431,6 @@ class MainWindow(Gtk.ApplicationWindow):
         if not self._run_validation_guard():
             return
         # Export logic is implemented in Sub-Task 9; placeholder for now.
-
-    def _on_apply_clicked(self, _btn: Gtk.Button) -> None:
-        """Validate the document before applying the config to Conky."""
-        if not self._run_validation_guard():
-            return
-        # Apply logic is implemented in Sub-Task 9; placeholder for now.
 
     def on_selection_changed(self, component_id: str | None) -> None:
         """Called by the canvas when the selected component changes.

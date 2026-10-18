@@ -8,7 +8,7 @@ from gi.repository import Gtk
 
 class ToolBar(Gtk.HeaderBar):
     """Application header bar with New, Open, Save,
-     Export, Preview, Apply, and Settings buttons.
+     Export, Preview, and Settings buttons.
 
      Each button emits a signal that MainWindow connects
      to business logic in later sub-tasks, currently wired to no-op stubs
@@ -29,11 +29,10 @@ class ToolBar(Gtk.HeaderBar):
         # Right Side: Workflow actions
 
         self.btn_settings = self._make_button("emblem-system-symbolic", "Global settings")
-        self.btn_apply = self._make_button("media-playback-start-symbolic", "Apply config to Conky")
         self.btn_preview = self._make_toggle("view-refresh-symbolic", "Toggle live preview (Ctrl+P)")
         self.btn_export = self._make_button("document-send-symbolic", "Export Conky config (Ctrl+E)")
 
-        for btn in (self.btn_settings, self.btn_apply, self.btn_preview, self.btn_export):
+        for btn in (self.btn_settings, self.btn_preview, self.btn_export):
             self.pack_end(btn)
 
 
