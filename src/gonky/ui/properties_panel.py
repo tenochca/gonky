@@ -135,6 +135,16 @@ class PropertiesPanel(Gtk.ScrolledWindow):
         )
         self._append_row("Enabled", enabled_switch)
 
+        # -- Universal row 4: no_newline ---------------------------------
+        no_newline_switch = Gtk.Switch()
+        no_newline_switch.set_active(component.no_newline)
+        no_newline_switch.set_halign(Gtk.Align.END)
+        no_newline_switch.connect(
+            "notify::active",
+            lambda w, _: (setattr(component, "no_newline", w.get_active()), on_changed()),
+        )
+        self._append_row("No newline", no_newline_switch)
+
         # -- Per-schema fields -------------------------------------------
         if cls is None:
             return

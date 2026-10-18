@@ -11,7 +11,8 @@ class ConkyComponent:
     label_color: str = ""  # Conky color applied to the label prefix only; "" = inherit current color
     canvas_x: int = 0
     canvas_y: int = 0
-    enabled: bool = True # skipped by config generator if false
+    enabled: bool = True   # skipped by config generator if false
+    no_newline: bool = False  # when True, the generator omits the trailing \n so the next component shares the same line
     properties: dict = field(default_factory=dict)
 
 # populated by components/__init__.py as concrete component classes are implemented

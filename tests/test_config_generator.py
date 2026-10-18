@@ -16,6 +16,7 @@ from gonky.models.settings import GlobalConkySettings
 
 def make_component(component_type: str, *, canvas_x: int = 0, canvas_y: int = 0,
                    enabled: bool = True, label: str = "", label_color: str = "",
+                   no_newline: bool = False,
                    properties: dict | None = None) -> ConkyComponent:
     return ConkyComponent(
         component_type=component_type,
@@ -24,6 +25,7 @@ def make_component(component_type: str, *, canvas_x: int = 0, canvas_y: int = 0,
         canvas_x=canvas_x,
         canvas_y=canvas_y,
         enabled=enabled,
+        no_newline=no_newline,
         properties=properties or {},
     )
 
@@ -549,3 +551,90 @@ class TestGenerate:
         doc = GonkyDocument(components=[make_component("not_a_real_type")])
         with pytest.raises(ConfigGenerationError):
             self.gen.generate(doc)
+
+
+# ---------------------------------------------------------------------------
+# TestNoNewline
+# ---------------------------------------------------------------------------
+
+class TestNoNewline:
+    """no_newline=True causes the component to share a line with the next one."""
+
+    def setup_method(self):
+        self.gen = ConfigGenerator()
+
+    def _render(self, components):
+        return self.gen._render_text_block(components)
+
+    def test_default_no_newline_is_false(self):
+        """ConkyComponent must default to no_newline=False."""
+        c = ConkyComponent()
+        assert c.no_newline is False
+
+    def test_no_newline_false_appends_newline(self):
+        """With no_newline=False (default) the component line ends with \\n."""
+        c = make_component("cpu_usage", no_newline=False)
+        out = self._render([c])
+        body = out[len("conky.text = [[\n"):-len("]]")]
+        assert body.endswith("\n")
+
+    def test_no_newline_true_omits_trailing_newline(self):
+        """With no_newline=True the rendered fragment has no trailing \\n."""
+        c = make_component("cpu_usage", no_newline=True)
+        out = self._render([c])
+        body = out[len("conky.text = [[\n"):-len("]]")]
+        assert not body.endswith("\n")
+
+    def test_two_components_on_same_line(self):
+        """cpu followed by ram with no_newline=True lands both on one output line."""
+        c1 = make_component("cpu_usage", canvas_y=0, no_newline=True)
+        c2 = make_component("ram_usage", canvas_y=0)
+        out = self._render([c1, c2])
+        body = out[len("conky.text = [[\n"):-len("]]")]
+        # Both Conky variables must appear on the same line (no newline between them)
+        lines = body.splitlines()
+        assert len(lines) == 1
+        assert "${cpu}" in lines[0]
+        assert "${memperc}" in lines[0]
+
+    def test_no_newline_does_not_affect_subsequent_component_newline(self):
+        """The component *after* the no_newline one still gets its own \\n."""
+        c1 = make_component("cpu_usage", canvas_y=0, no_newline=True)
+        c2 = make_component("ram_usage", canvas_y=0)
+        c3 = make_component("separator", canvas_y=1)
+        out = self._render([c1, c2, c3])
+        body = out[len("conky.text = [[\n"):-len("]]")]
+        lines = body.splitlines()
+        # Line 0: cpu + ram together; line 1: separator
+        assert len(lines) == 2
+        assert "${cpu}" in lines[0]
+        assert "${memperc}" in lines[0]
+        assert "${hr}" in lines[1]
+
+    def test_no_newline_spacer_is_unaffected(self):
+        """no_newline has no effect on Spacer components (they use the spacer path)."""
+        c_with    = make_component("spacer", no_newline=True, properties={"line_count": 1})
+        c_without = make_component("spacer",                  properties={"line_count": 1})
+        assert self._render([c_with]) == self._render([c_without])
+
+    def test_label_still_applied_with_no_newline(self):
+        """A label prefix is still prepended when no_newline=True."""
+        c = make_component("cpu_usage", label="CPU: ", no_newline=True)
+        out = self._render([c])
+        assert "CPU: ${cpu}" in out
+
+    def test_round_trip_no_newline_serialization(self):
+        """no_newline round-trips through GonkyDocument.to_dict / from_dict."""
+        from gonky.models.document import GonkyDocument
+        c = ConkyComponent(component_type="cpu_usage", no_newline=True)
+        doc = GonkyDocument(components=[c])
+        restored = GonkyDocument.from_dict(doc.to_dict())
+        assert restored.components[0].no_newline is True
+
+    def test_round_trip_no_newline_default_serialization(self):
+        """no_newline=False (default) round-trips without error."""
+        from gonky.models.document import GonkyDocument
+        c = ConkyComponent(component_type="cpu_usage")
+        doc = GonkyDocument(components=[c])
+        restored = GonkyDocument.from_dict(doc.to_dict())
+        assert restored.components[0].no_newline is False

@@ -125,7 +125,9 @@ class ConfigGenerator:
                             f"${{color}}"
                         )
                     conky_text = prefix + conky_text
-                lines.append(conky_text + "\n")
+                # no_newline=True: omit the trailing \n so the next component
+                # on the same logical row is appended on the same output line.
+                lines.append(conky_text if component.no_newline else conky_text + "\n")
 
         return "conky.text = [[\n" + "".join(lines) + "]]"
 
