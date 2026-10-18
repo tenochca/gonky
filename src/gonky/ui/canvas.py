@@ -63,27 +63,36 @@ class CanvasTile(Gtk.Box):
     # ------------------------------------------------------------------
 
     def _setup_click_gesture(self) -> None:
-        """Attach a Gtk.GestureClick so clicking the tile selects it."""
+        """Attach a Gtk.GestureClick so clicking the tile selects it.
+
+        Selection is triggered on ``released`` (not ``pressed``) so that the
+        DragSource can observe the motion that follows a press without the
+        click gesture having already claimed the event sequence.  If a drag
+        is started instead of a click, the ``released`` signal is never fired
+        (GTK cancels the gesture once the drag threshold is exceeded), so
+        selection in that case is handled by the ``drag-begin`` handler on the
+        DragSource instead.
+        """
         gesture = Gtk.GestureClick()
         gesture.set_button(1)  # primary mouse button
 
-        def on_pressed(
+        def on_released(
             _gesture: Gtk.GestureClick,
             _n_press: int,
             _x: float,
             _y: float,
         ) -> None:
-            # Claim the sequence so the parent Gtk.Fixed's GestureClick
-            # (which deselects on blank-canvas clicks) does not also fire
-            # for this same event and immediately undo the selection.
-            _gesture.set_state(Gtk.EventSequenceState.CLAIMED)
             self._canvas.select_tile(self.component.id)
 
-        gesture.connect("pressed", on_pressed)
+        gesture.connect("released", on_released)
         self.add_controller(gesture)
 
     def _setup_drag_source(self) -> None:
-        """Attach a Gtk.DragSource for tile-move operations."""
+        """Attach a Gtk.DragSource for tile-move operations.
+
+        ``drag-begin`` selects the tile as soon as a drag is recognised so
+        that selection is not lost when the user drags without a prior click.
+        """
         drag_source = Gtk.DragSource()
         drag_source.set_actions(Gdk.DragAction.MOVE)
 
@@ -98,7 +107,15 @@ class CanvasTile(Gtk.Box):
             value.set_string(_TILE_DRAG_PREFIX + self.component.id)
             return Gdk.ContentProvider.new_for_value(value)
 
+        def on_drag_begin(
+            source: Gtk.DragSource, _drag: Gdk.Drag
+        ) -> None:
+            # Select the tile when the drag gesture is recognised so the user
+            # does not need a prior click to select before dragging.
+            self._canvas.select_tile(self.component.id)
+
         drag_source.connect("prepare", on_prepare)
+        drag_source.connect("drag-begin", on_drag_begin)
         self.add_controller(drag_source)
 
     # ------------------------------------------------------------------
