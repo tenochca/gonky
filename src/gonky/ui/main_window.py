@@ -265,8 +265,12 @@ class MainWindow(Gtk.ApplicationWindow):
                 btn.set_active(False)
                 return
             self._preview_manager.start_preview(self.document)
+            self.statusbar.set_conky_running(True)
+            self.statusbar.set_message("Conky preview started")
         else:
             self._preview_manager.stop_preview()
+            self.statusbar.set_conky_running(False)
+            self.statusbar.set_message("Conky preview stopped")
 
     def _on_new(self, _btn: Gtk.Button) -> None:
         """Handle New — guard against unsaved changes, then prompt for a name."""
