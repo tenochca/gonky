@@ -12,14 +12,11 @@ class RamUsage(AbstractComponent):
     # reference format (differs depending on choice)
     # ${memperc} -- percentage
     # ${mem} -- GB used (human)
-    # ${memraw} -- bytes used
     def render_conky_text(self, props: dict) -> str:
         format: str = props.get("format", "%")
 
         if format == "human":
             return "${mem}"
-        elif format == "bytes":
-            return "${memraw}"
         else:
             return "${memperc}"
 
@@ -31,8 +28,8 @@ class RamUsage(AbstractComponent):
                 label="Format",
                 field_type="choice",
                 default="%",
-                choices=["%", "bytes", "human"],
-                tooltip="% = percentage used; human = human-readable size (e.g. 3.2 GiB); bytes = raw bytes",
+                choices=["%", "human"],
+                tooltip="% = percentage used; human = human-readable size (e.g. 3.2 GiB)",
             ),
         ]
 
@@ -168,14 +165,11 @@ class SwapUsage(AbstractComponent):
     # reference format (differs depending on choice)
     # ${swapperc} -- percentage
     # ${swap} -- GB used (human)
-    # ${swapraw} -- bytes used
     def render_conky_text(self, props: dict) -> str:
         format: str = props.get("format", "%")
 
         if format == "human":
             return "${swap}"
-        elif format == "bytes":
-            return "${swapraw}"
         else:
             return "${swapperc}"
 
@@ -187,7 +181,7 @@ class SwapUsage(AbstractComponent):
                 label="Format",
                 field_type="choice",
                 default="%",
-                choices=["%", "bytes", "human"],
-                tooltip="% = percentage used; human = human-readable size (e.g. 1.1 GiB); bytes = raw bytes",
+                choices=["%", "human"],
+                tooltip="% = percentage used; human = human-readable size (e.g. 1.1 GiB)",
             ),
         ]
