@@ -109,6 +109,24 @@ class TestRenderConfigBlock:
         assert "own_window_background" not in out
         assert "    background = " in out
 
+    def test_own_window_colour_omitted_when_transparent(self):
+        """own_window_colour must not appear in the config when transparency is on."""
+        settings = GlobalConkySettings(own_window_transparent=True, own_window_colour="#1a1a2e")
+        out = self.gen._render_config_block(settings)
+        assert "own_window_colour" not in out
+
+    def test_own_window_colour_omitted_when_colour_empty(self):
+        """own_window_colour must not appear when the colour field is empty string."""
+        settings = GlobalConkySettings(own_window_transparent=False, own_window_colour="")
+        out = self.gen._render_config_block(settings)
+        assert "own_window_colour" not in out
+
+    def test_own_window_colour_emitted_when_transparency_disabled(self):
+        """own_window_colour must appear when transparency is off and a colour is set."""
+        settings = GlobalConkySettings(own_window_transparent=False, own_window_colour="#1a1a2e")
+        out = self.gen._render_config_block(settings)
+        assert "    own_window_colour = '#1a1a2e'," in out
+
 
 # ---------------------------------------------------------------------------
 # TestSortComponents

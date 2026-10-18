@@ -32,6 +32,7 @@ class TestGlobalConkySettings:
         assert s.border_width == 0
         assert s.cpu_avg_samples == 2
         assert s.net_avg_samples == 2
+        assert s.own_window_colour == ""
         assert s.extra_lua == ""
 
     def test_custom_values(self):

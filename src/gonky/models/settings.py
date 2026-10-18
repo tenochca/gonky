@@ -16,6 +16,7 @@ class GlobalConkySettings:
    own_window_type: str = "desktop"
    own_window_transparent: bool = True
    own_window_argb_visual: bool = True
+   own_window_colour: str = ""  # background colour when transparency is disabled; "" = omit
    background: bool = False
    border_width: int = 0
 

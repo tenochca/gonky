@@ -44,6 +44,8 @@ class ConfigGenerator:
         config += f"    own_window_type = '{settings.own_window_type}',\n"
         config += f"    own_window_transparent = {b(settings.own_window_transparent)},\n"
         config += f"    own_window_argb_visual = {b(settings.own_window_argb_visual)},\n"
+        if not settings.own_window_transparent and settings.own_window_colour:
+            config += f"    own_window_colour = '{settings.own_window_colour}',\n"
         config += f"    double_buffer = {b(settings.double_buffer)},\n"
         config += f"    update_interval = {settings.update_interval},\n"
         config += f"    font = '{settings.default_font}:size={settings.default_font_size}',\n"

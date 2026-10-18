@@ -42,6 +42,13 @@ _SETTINGS_FIELDS: list[PropertyField] = [
     ),
     PropertyField(key="own_window_transparent", label="Transparent", field_type="bool", default=True),
     PropertyField(key="own_window_argb_visual", label="ARGB Visual", field_type="bool", default=True),
+    PropertyField(
+        key="own_window_colour",
+        label="Window Background Color",
+        field_type="color",
+        default="",
+        tooltip="Background color used when transparency is disabled",
+    ),
     PropertyField(key="background", label="Background", field_type="bool", default=False),
     PropertyField(key="double_buffer", label="Double Buffer", field_type="bool", default=True),
     PropertyField(key="border_width", label="Border Width", field_type="int", default=0, min_val=0),
