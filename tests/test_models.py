@@ -50,7 +50,8 @@ class TestConkyComponent:
     def test_defaults(self):
         c = ConkyComponent()
         assert c.component_type == "text"
-        assert c.label == "Text"
+        assert c.label == ""
+        assert c.label_color == ""
         assert c.canvas_x == 0
         assert c.canvas_y == 0
         assert c.enabled is True

@@ -295,9 +295,10 @@ class Canvas(Gtk.ScrolledWindow):
         canvas_y = int(y)
 
         # Build the new component with default properties.
+        # label defaults to "" — no config prefix unless the user sets one explicitly.
         component = ConkyComponent(
             component_type=type_key,
-            label=component_cls.DISPLAY_NAME,
+            label="",
             canvas_x=canvas_x,
             canvas_y=canvas_y,
             properties=dict(component_cls.DEFAULT_PROPERTIES),

@@ -7,7 +7,8 @@ from uuid import uuid4
 class ConkyComponent:
     id: str = field(default_factory=lambda: str(uuid4()))
     component_type: str = "text" # placeholder values, lookup type
-    label: str = "Text" 
+    label: str = ""        # user-editable prefix emitted verbatim before the component value in config output; "" = no prefix
+    label_color: str = ""  # Conky color applied to the label prefix only; "" = inherit current color
     canvas_x: int = 0
     canvas_y: int = 0
     enabled: bool = True # skipped by config generator if false

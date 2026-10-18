@@ -15,9 +15,12 @@ from gonky.models.settings import GlobalConkySettings
 # ---------------------------------------------------------------------------
 
 def make_component(component_type: str, *, canvas_x: int = 0, canvas_y: int = 0,
-                   enabled: bool = True, properties: dict | None = None) -> ConkyComponent:
+                   enabled: bool = True, label: str = "", label_color: str = "",
+                   properties: dict | None = None) -> ConkyComponent:
     return ConkyComponent(
         component_type=component_type,
+        label=label,
+        label_color=label_color,
         canvas_x=canvas_x,
         canvas_y=canvas_y,
         enabled=enabled,
@@ -334,6 +337,122 @@ class TestRenderTextBlock:
     def test_output_ends_with_closing_brackets(self):
         out = self._render([])
         assert out.endswith("]]")
+
+
+# ---------------------------------------------------------------------------
+# TestLabelPrefix
+# ---------------------------------------------------------------------------
+
+class TestLabelPrefix:
+    """Label is prepended verbatim (dollar-escaped) to non-spacer, non-text output."""
+
+    def setup_method(self):
+        self.gen = ConfigGenerator()
+
+    def _render(self, components):
+        return self.gen._render_text_block(components)
+
+    def test_empty_label_produces_no_prefix(self):
+        """Default empty label must not change the rendered output at all."""
+        c_no_label = make_component("cpu_usage", label="")
+        c_default  = make_component("cpu_usage")          # label="" by default
+        assert self._render([c_no_label]) == self._render([c_default])
+
+    def test_label_prepended_to_component_output(self):
+        """A non-empty label appears immediately before the Conky variable."""
+        c = make_component("cpu_usage", label="CPU: ")
+        out = self._render([c])
+        assert "CPU: ${cpu}" in out
+
+    def test_label_no_separator_added(self):
+        """The code must not insert any separator between label and value."""
+        c = make_component("ram_usage", label="RAM:")
+        out = self._render([c])
+        assert "RAM:${memperc}" in out
+
+    def test_label_with_special_characters(self):
+        """Special characters in the label appear literally in the output."""
+        c = make_component("cpu_usage", label="[CPU] #1 → ")
+        out = self._render([c])
+        assert "[CPU] #1 → ${cpu}" in out
+
+    def test_label_dollar_sign_escaped(self):
+        """A '$' in the label must be escaped so Conky treats it as literal text."""
+        c = make_component("cpu_usage", label="$cost: ")
+        out = self._render([c])
+        assert r"\$cost: ${cpu}" in out
+
+    def test_label_not_applied_to_spacer(self):
+        """Spacer output must be unchanged even when a label is set."""
+        c_with    = make_component("spacer", label="Gap", properties={"line_count": 1})
+        c_without = make_component("spacer",               properties={"line_count": 1})
+        assert self._render([c_with]) == self._render([c_without])
+
+    def test_label_not_applied_to_custom_text(self):
+        """CustomText manages its own content; the label must not prefix it."""
+        c_with    = make_component("text", label="Note: ", properties={"content": "hello"})
+        c_without = make_component("text",                  properties={"content": "hello"})
+        assert self._render([c_with]) == self._render([c_without])
+
+    def test_label_applied_across_multiple_components(self):
+        """Each component gets its own label prefix independently."""
+        c1 = make_component("cpu_usage", label="CPU: ", canvas_y=0)
+        c2 = make_component("ram_usage", label="RAM: ", canvas_y=1)
+        out = self._render([c1, c2])
+        assert "CPU: ${cpu}" in out
+        assert "RAM: ${memperc}" in out
+
+
+# ---------------------------------------------------------------------------
+# TestLabelColor
+# ---------------------------------------------------------------------------
+
+class TestLabelColor:
+    """label_color wraps only the label prefix in a Conky color tag."""
+
+    def setup_method(self):
+        self.gen = ConfigGenerator()
+
+    def _render(self, components):
+        return self.gen._render_text_block(components)
+
+    def test_empty_label_color_produces_no_color_tags(self):
+        """Default empty label_color must leave output identical to no color."""
+        c = make_component("cpu_usage", label="CPU: ", label_color="")
+        out = self._render([c])
+        assert "${color" not in out
+        assert "CPU: ${cpu}" in out
+
+    def test_label_color_wraps_label_with_color_tags(self):
+        """A set label_color wraps the label text in ${color …}…${color}."""
+        c = make_component("cpu_usage", label="CPU: ", label_color="#ff0000")
+        out = self._render([c])
+        assert "${color #ff0000}CPU: ${color}" in out
+
+    def test_value_portion_is_outside_color_tags(self):
+        """The Conky variable (value) must appear after the closing ${color} reset."""
+        c = make_component("cpu_usage", label="CPU: ", label_color="#ff0000")
+        out = self._render([c])
+        # Full expected sequence: color-open  label  color-reset  value
+        assert "${color #ff0000}CPU: ${color}${cpu}" in out
+
+    def test_label_color_not_applied_without_label(self):
+        """When label is empty, label_color has no effect — no color tags emitted."""
+        c = make_component("cpu_usage", label="", label_color="#ff0000")
+        out = self._render([c])
+        assert "${color" not in out
+
+    def test_label_color_not_applied_to_spacer(self):
+        """Spacer output is unchanged even when label_color is set."""
+        c_with    = make_component("spacer", label="x", label_color="#ff0000", properties={"line_count": 1})
+        c_without = make_component("spacer",               properties={"line_count": 1})
+        assert self._render([c_with]) == self._render([c_without])
+
+    def test_label_color_not_applied_to_custom_text(self):
+        """CustomText output is unchanged even when label_color is set."""
+        c_with    = make_component("text", label="x", label_color="#ff0000", properties={"content": "hi"})
+        c_without = make_component("text",                                    properties={"content": "hi"})
+        assert self._render([c_with]) == self._render([c_without])
 
 
 # ---------------------------------------------------------------------------

@@ -108,7 +108,24 @@ class PropertiesPanel(Gtk.ScrolledWindow):
         )
         self._append_row("Label", label_entry)
 
-        # -- Universal row 2: enabled ------------------------------------
+        # -- Universal row 2: label color --------------------------------
+        def _on_label_color_changed(value: str) -> None:
+            component.label_color = value
+            on_changed()
+
+        label_color_field = PropertyField(
+            key="label_color",
+            label="Label Color",
+            field_type="color",
+            default="",
+            tooltip="Color of the label prefix; leave unset to inherit the default color",
+        )
+        label_color_row = form_builder.make_field_widget(
+            label_color_field, component.label_color, _on_label_color_changed
+        )
+        self._content_box.append(label_color_row)
+
+        # -- Universal row 3: enabled ------------------------------------
         enabled_switch = Gtk.Switch()
         enabled_switch.set_active(component.enabled)
         enabled_switch.set_halign(Gtk.Align.END)

@@ -78,6 +78,8 @@ class ConfigGenerator:
         Spacer components control blank-line count directly via their render output.
         CustomText content is dollar-escaped before rendering; all other components
         emit raw Conky variable syntax and must never be passed through the escaper.
+        For non-spacer, non-CustomText components a non-empty label is prepended
+        verbatim (dollar-escaped) to the rendered output as a literal text prefix.
         Unknown component types raise ConfigGenerationError.
         """
         sorted_components = self._sort_components(components)
@@ -107,6 +109,22 @@ class ConfigGenerator:
                 # so the correct number of blank lines appears in the output.
                 lines.append(conky_text)
             else:
+                # Prepend the component label (if set) as a literal text prefix.
+                # The label is dollar-escaped so a user-typed '$' won't be
+                # interpreted as a Conky variable reference.
+                # CustomText is excluded: it manages its own content field and
+                # the label would duplicate or conflict with the user's text.
+                if component.label and component.component_type != "text":
+                    prefix = self._escape_conky_text(component.label)
+                    if component.label_color:
+                        # Wrap only the label text in a color tag; reset afterward
+                        # so the component value inherits the default color again.
+                        prefix = (
+                            f"${{color {component.label_color}}}"
+                            f"{prefix}"
+                            f"${{color}}"
+                        )
+                    conky_text = prefix + conky_text
                 lines.append(conky_text + "\n")
 
         return "conky.text = [[\n" + "".join(lines) + "]]"
