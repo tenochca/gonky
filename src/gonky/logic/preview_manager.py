@@ -60,13 +60,7 @@ class PreviewManager:
         self.stop_preview()
 
         # Build a shallow copy of the document with overridden placement settings.
-        preview_settings = dataclasses.replace(
-            doc.settings,
-            alignment="top_right",
-            gap_x=10,
-            gap_y=10,
-        )
-        preview_doc = dataclasses.replace(doc, settings=preview_settings)
+        preview_doc = dataclasses.replace(doc, settings=doc.settings)
 
         config_text = self._generator.generate(preview_doc)
 
