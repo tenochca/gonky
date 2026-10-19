@@ -1,4 +1,4 @@
-# Post-v1 Roadmap
+# Post-v1.0.0 Roadmap
 
 Features deferred from the v1 milestone.
 

@@ -1,4 +1,4 @@
-# Technology Stack Rationale — Gonky
+# Technology Stack Rationale — Gonky v1.0.0
 
 ## Overview
 
@@ -84,9 +84,7 @@ inherits the Rust complexity concern above. Neither produces a native Linux look
 | `uuid` | Generate unique `id` for each `ConkyComponent` |
 | `abc` | `ABC`, `abstractmethod` — `AbstractComponent` base class |
 | `typing` | Type hints throughout (`Literal`, `Any`, `list`, etc.) |
-| `copy` | `copy.deepcopy` for default properties when instantiating components |
 | `atexit` | Register cleanup handler to stop preview Conky on app exit |
-| `os` | File permission checks, directory creation fallback |
 
 ---
 

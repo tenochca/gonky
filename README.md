@@ -8,7 +8,7 @@ their properties, and export a ready-to-use `~/.config/conky/conky.conf`.
 
 - **Visual canvas editor** — drag components from the library and position them freely;
   vertical order on the canvas maps directly to the order of blocks in the generated config.
-- **Component library** — 20+ built-in component types covering CPU, memory, disk, network,
+- **Component library** — 30+ built-in component types covering CPU, memory, disk, network,
   battery, temperature, clock, graphs, bars, separators, custom text, and Lua snippets.
 - **Live properties panel** — click any canvas tile to edit its label, color, font, and all
   type-specific settings through auto-generated form fields with tooltips.
